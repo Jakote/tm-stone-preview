@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>TM Stone — Quote Builder</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect rx='16' width='100' height='100' fill='%23c2532a'/><text x='50' y='68' font-size='50' font-weight='bold' text-anchor='middle' fill='white' font-family='sans-serif'>TM</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f4f1ec;--card:#fff;--line:#ddd6cb;--ink:#241f1c;--ink2:#635a52;--ink3:#968b81;
+ --ac:#c2532a;--ac2:#e0703f;--dark:#2b2725;--ok:#2f7d46;--warn:#b57614;--bad:#b3261e;--r:10px}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase}
+.top{background:var(--dark);color:#fff;padding:0 18px;position:sticky;top:0;z-index:50}
+.tw{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:16px;height:58px}
+.lg{display:flex;align-items:center;gap:9px}
+.lgm{width:32px;height:32px;border-radius:7px;background:var(--ac);display:grid;place-items:center;font-family:'Barlow Condensed';font-weight:700;font-size:15px}
+.lg b{font-family:'Barlow Condensed';font-size:17px;line-height:1;display:block}
+.lg span{font-size:9.5px;color:#a89d94;letter-spacing:.13em}
+.tabs{display:flex;gap:3px;margin-left:auto}
+.tab{background:none;border:none;color:#c9bfb6;font-family:'Inter';font-size:13px;font-weight:600;padding:8px 15px;border-radius:7px;cursor:pointer}
+.tab:hover{background:rgba(255,255,255,.08);color:#fff}
+.tab.on{background:var(--ac);color:#fff}
+.wrap{max-width:1180px;margin:0 auto;padding:22px 18px 60px}
+.page{display:none}.page.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin-bottom:14px}
+.card h2{font-size:19px;margin-bottom:3px}
+.card .sub{font-size:12.5px;color:var(--ink3);margin-bottom:16px}
+label{display:block;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin:0 0 5px}
+input,select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:7px;font-family:'Inter';font-size:14px;background:#fff;color:var(--ink);outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--ac)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}
+.g4{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:11px;align-items:end}
+.btn{background:var(--ac);color:#fff;border:none;padding:10px 17px;border-radius:7px;font-family:'Inter';font-weight:700;font-size:13.5px;cursor:pointer}
+.btn:hover{background:var(--ac2)}
+.btn.ghost{background:#fff;border:1px solid var(--line);color:var(--ink2)}
+.btn.ghost:hover{border-color:var(--ac);color:var(--ac)}
+.btn.sm{padding:6px 11px;font-size:12px}
+.btn.dgr{background:#fff;border:1px solid var(--line);color:var(--bad)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);padding:9px 10px;border-bottom:1px solid var(--line)}
+td{padding:10px;border-bottom:1px solid #eee7dd}
+tr:last-child td{border-bottom:none}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.tot{background:var(--dark);color:#fff;border-radius:var(--r);padding:20px;display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center}
+.tot .big{font-family:'Barlow Condensed';font-size:44px;font-weight:700;color:var(--ac2);line-height:1}
+.tot .lbl{font-size:11px;color:#a89d94;letter-spacing:.1em;text-transform:uppercase}
+.tot .brk{font-size:12.5px;color:#c9bfb6;line-height:1.9}
+.tot .brk b{color:#fff}
+.pill{display:inline-block;padding:3px 9px;border-radius:99px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.p-draft{background:#eee7dd;color:var(--ink2)}
+.p-sent{background:#e3edf5;color:#1c5b8a}
+.p-accepted{background:#e0f0e5;color:var(--ok)}
+.p-declined{background:#f6e3e1;color:var(--bad)}
+.alert{border-radius:9px;padding:13px 15px;font-size:13px;line-height:1.65;margin-bottom:13px}
+.a-warn{background:#fdf3e0;border:1px solid #e8c98a;color:#7a5310}
+.a-ok{background:#e8f4ec;border:1px solid #a9d3b8;color:#20603a}
+.mini{font-size:11.5px;color:var(--ink3);line-height:1.6}
+.mat{display:grid;grid-template-columns:1.6fr 1fr 1fr auto;gap:11px;align-items:end;padding:11px 0;border-bottom:1px solid #eee7dd}
+.chg{font-size:11.5px;font-weight:700}
+.up{color:var(--bad)}.down{color:var(--ok)}.same{color:var(--ink3)}
+@media print{
+  .top,.tabs,.noprint{display:none!important}
+  body{background:#fff}.wrap{padding:0;max-width:100%}
+  .card{border:none;padding:0;margin-bottom:18px}
+  .tot{background:#fff;color:#000;border:2px solid #000;border-radius:0}
+  .tot .big{color:#000}.tot .lbl,.tot .brk{color:#333}.tot .brk b{color:#000}
+  @page{margin:16mm}
+}
+@media(max-width:820px){.g2,.g3,.g4,.mat{grid-template-columns:1fr}.tot{grid-template-columns:1fr}.tabs{overflow-x:auto}}
+</style>
+</head>
+<body>
+
+<div class="top"><div class="tw">
+  <div class="lg"><div class="lgm">TM</div><div><b>TM Stone</b><span>QUOTE BUILDER</span></div></div>
+  <div class="tabs">
+    <button class="tab on" data-p="quote">New Quote</button>
+    <button class="tab" data-p="saved">Saved Quotes</button>
+    <button class="tab" data-p="materials">Material Prices</button>
+  </div>
+</div></div>
+
+<div class="wrap">
+
+<!-- ================= NEW QUOTE ================= -->
+<div class="page on" id="p-quote">
+  <div id="driftBanner"></div>
+
+  <div class="card noprint">
+    <h2>Customer</h2>
+    <div class="sub">Who is this quote for, and where is the job</div>
+    <div class="g3">
+      <div><label>Customer name</label><input id="cname" placeholder="e.g. M. Thabane"></div>
+      <div><label>Phone</label><input id="cphone" placeholder="+266 …"></div>
+      <div><label>Customer type</label><select id="ctype"><option value="retail">Homeowner</option><option value="trade">Trade / contractor</option></select></div>
+    </div>
+    <div style="margin-top:11px"><label>Site address</label><input id="csite" placeholder="e.g. Ha Tsosane, Maseru"></div>
+  </div>
+
+  <div class="card noprint">
+    <h2>Pricing</h2>
+    <div class="sub">Mark-up is applied to cost — TM Stone's own convention (cost × 1.40 = 40%)</div>
+    <div class="g3">
+      <div><label>Mark-up %</label><input type="number" id="markup" value="40" min="0" step="1"></div>
+      <div><label>Wastage % (cuts &amp; breakage)</label><input type="number" id="wastage" value="5" min="0" step="1"></div>
+      <div><label>Quote valid for (days)</label><input type="number" id="validdays" value="14" min="1" step="1"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Items</h2>
+    <div class="sub">Add each area to be paved</div>
+    <div class="g4 noprint" style="margin-bottom:14px">
+      <div><label>Product</label><select id="lprod"></select></div>
+      <div><label>Area (m²)</label><input type="number" id="larea" value="120" min="0.1" step="0.1"></div>
+      <div><label>Description</label><input id="ldesc" placeholder="e.g. Driveway"></div>
+      <div><button class="btn" onclick="addLine()">Add item</button></div>
+    </div>
+    <table>
+      <thead><tr>
+        <th>Item</th><th class="num">Area m²</th><th class="num">Pavers</th>
+        <th class="num">Unit price</th><th class="num">Total</th><th class="noprint"></th>
+      </tr></thead>
+      <tbody id="lines"><tr><td colspan="6" class="mini" style="padding:18px 10px">No items yet — add one above.</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="tot">
+    <div>
+      <div class="lbl">Quote total</div>
+      <div class="big" id="qtotal">M0.00</div>
+      <div class="brk" id="qbrk"></div>
+    </div>
+    <div class="noprint" style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn" onclick="saveQuote()">Save quote</button>
+      <button class="btn ghost" onclick="window.print()">Print / PDF</button>
+      <button class="btn ghost" onclick="newQuote()">Clear</button>
+    </div>
+  </div>
+  <p class="mini" style="margin-top:12px">Prices are for supply of pavers. Base preparation, edging, transport and installation are quoted after a site measure-up. Quote valid <span id="vdays">14</span> days from issue — after that, input prices are re-checked.</p>
+</div>
+
+<!-- ================= SAVED ================= -->
+<div class="page" id="p-saved">
+  <div id="staleWrap"></div>
+  <div class="card">
+    <h2>Saved quotes</h2>
+    <div class="sub">Every quote stores the material prices it was built on</div>
+    <table>
+      <thead><tr><th>Quote</th><th>Customer</th><th class="num">Total</th><th>Date</th><th>Status</th><th>Cost base</th><th></th></tr></thead>
+      <tbody id="savedRows"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ================= MATERIALS ================= -->
+<div class="page" id="p-materials">
+  <div class="card">
+    <h2>Material prices</h2>
+    <div class="sub">Change a price here and every product, quote and price list updates immediately</div>
+    <div id="matRows"></div>
+    <div style="margin-top:16px;display:flex;gap:9px;flex-wrap:wrap">
+      <button class="btn" onclick="saveMaterials()">Save prices</button>
+      <button class="btn ghost" onclick="resetMaterials()">Reset to August 2026 baseline</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Price list — all products</h2>
+    <div class="sub">At the current material prices and <span id="plMarkup">40</span>% mark-up</div>
+    <table>
+      <thead><tr><th>Product</th><th class="num">Per batch</th><th class="num">Material</th><th class="num">Cost</th><th class="num">Sell</th><th class="num">Per m²</th></tr></thead>
+      <tbody id="plRows"></tbody>
+    </table>
+    <p class="mini" style="margin-top:12px">Overhead M1.0341 and mould depreciation M0.1200 per unit are carried from the SQ200 batch model. Confirm these for other sizes before quoting large trade volumes.</p>
+  </div>
+</div>
+
+</div>
+
+<script>
+/* ============================================================
+   TM Stone quote builder
+   Costing logic is identical to erp/app/costing.js — verified
+   against TM Stone's own analysis (M3.4152 / M4.5693 / M159.93).
+   ⚠️ MARK-UP on cost (×1.40), never margin (÷0.60).
+   Storage is localStorage for now; swap for Supabase on go-live.
+   ============================================================ */
+const BASE = { CEMENT:130, SAND:2800, STONE:434.26, PIGMENT:1600 };
+const RECIPE = { cement_bags:2.75, sand_litres:220, stone_litres:220, pigment_kg:2.75, yield_litres:432 };
+const OVERHEAD = 1.0341, MOULD = 0.1200;
+const SAND_LOAD_M3 = 12, STONE_T_PER_M3 = 1.6;
+const PRODUCTS = [
+  { code:'SQ200', name:'200 × 200 × 50 mm Square', litres:2.0,  face:0.04   },
+  { code:'SQ100', name:'100 × 100 × 50 mm Square', litres:0.5,  face:0.01   },
+  { code:'BR220', name:'220 × 110 × 50 mm Brick',  litres:1.21, face:0.0242 },
+  { code:'HEX200',name:'Hexagon 200 × 50 mm',      litres:1.30, face:0.026  },
+];
+const LS_MAT='tms_materials', LS_Q='tms_quotes';
+const $=id=>document.getElementById(id);
+const M=n=>'M'+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+/* Storage must never take the app down. localStorage throws in private
+   browsing and in restricted contexts; the quote screen still has to work. */
+const store = {
+  get(k, fallback){
+    try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; }
+    catch(e){ return fallback; }
+  },
+  set(k, v){
+    try { localStorage.setItem(k, JSON.stringify(v)); return true; }
+    catch(e){ console.warn('Storage unavailable — this session will not persist.'); return false; }
+  }
+};
+
+let materials = store.get(LS_MAT, null) || {...BASE};
+let quotes    = store.get(LS_Q, []);
+let lines     = [];
+
+function batchCost(p){
+  return RECIPE.cement_bags*p.CEMENT
+       + (RECIPE.sand_litres/1000)/SAND_LOAD_M3*p.SAND
+       + (RECIPE.stone_litres/1000)*STONE_T_PER_M3*p.STONE
+       + (RECIPE.pigment_kg/25)*p.PIGMENT;
+}
+function unitCosting(prod, prices, markup){
+  const perBatch = RECIPE.yield_litres/prod.litres;
+  const material = batchCost(prices)/perBatch;
+  const cost = material + OVERHEAD + MOULD;
+  const price = cost*(1+markup/100);           // MARK-UP
+  return { perBatch, material, cost, price, perM2: price/prod.face };
+}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on'); $('p-'+t.dataset.p).classList.add('on');
+  if(t.dataset.p==='saved') renderSaved();
+  if(t.dataset.p==='materials'){ renderMaterials(); renderPriceList(); }
+});
+
+/* ---------- quote lines ---------- */
+$('lprod').innerHTML = PRODUCTS.map(p=>`<option value="${p.code}">${p.name}</option>`).join('');
+
+function addLine(){
+  const code=$('lprod').value, area=parseFloat($('larea').value);
+  if(!area||area<=0){ alert('Enter an area in m².'); return; }
+  const prod=PRODUCTS.find(p=>p.code===code);
+  lines.push({ code, name:prod.name, desc:$('ldesc').value.trim()||prod.name, area });
+  $('ldesc').value=''; renderLines();
+}
+function delLine(i){ lines.splice(i,1); renderLines(); }
+
+function renderLines(){
+  const markup=+$('markup').value||0, wast=+$('wastage').value||0;
+  $('vdays').textContent=$('validdays').value||14;
+  const tb=$('lines');
+  if(!lines.length){
+    tb.innerHTML='<tr><td colspan="6" class="mini" style="padding:18px 10px">No items yet — add one above.</td></tr>';
+    $('qtotal').textContent='M0.00'; $('qbrk').innerHTML=''; return;
+  }
+  let total=0, cost=0, units=0, area=0;
+  tb.innerHTML = lines.map((l,i)=>{
+    const prod=PRODUCTS.find(p=>p.code===l.code);
+    const c=unitCosting(prod, materials, markup);
+    const u=Math.ceil((l.area/prod.face)*(1+wast/100));
+    const lt=u*c.price;
+    total+=lt; cost+=u*c.cost; units+=u; area+=l.area;
+    return `<tr><td><b>${l.desc}</b><div class="mini">${prod.name}</div></td>
+      <td class="num">${l.area.toFixed(1)}</td>
+      <td class="num">${u.toLocaleString('en-US')}</td>
+      <td class="num">${M(c.price)}</td>
+      <td class="num"><b>${M(lt)}</b></td>
+      <td class="noprint"><button class="btn dgr sm" onclick="delLine(${i})">Remove</button></td></tr>`;
+  }).join('');
+  $('qtotal').textContent=M(total);
+  const profit=total-cost;
+  $('qbrk').innerHTML =
+    `${area.toFixed(1)} m² · ${units.toLocaleString('en-US')} pavers · incl. ${wast}% wastage<br>`+
+    `Cost to make <b>${M(cost)}</b> · Gross profit <b>${M(profit)}</b> (${(profit/total*100).toFixed(1)}% of price)<br>`+
+    `Average <b>${M(total/(area||1))}</b> per m²`;
+  checkDrift();
+}
+['markup','wastage','validdays'].forEach(id=>$(id).addEventListener('input',renderLines));
+
+/* ---------- drift warning on the quoting screen ---------- */
+function checkDrift(){
+  const d=((batchCost(materials)-batchCost(BASE))/batchCost(BASE))*100;
+  const b=$('driftBanner');
+  if(Math.abs(d)<0.05){ b.innerHTML=''; return; }
+  b.innerHTML = d>0
+    ? `<div class="alert a-warn"><b>⚠ Material costs are ${d.toFixed(1)}% above the August baseline.</b>
+        You are quoting on today's prices — good. Check <b>Saved Quotes</b> for older quotes still out at the old cost.</div>`
+    : `<div class="alert a-ok"><b>Material costs are ${Math.abs(d).toFixed(1)}% below the August baseline.</b>
+        You can sharpen a price and still hold your mark-up.</div>`;
+}
+
+/* ---------- save / list ---------- */
+function saveQuote(){
+  if(!lines.length){ alert('Add at least one item first.'); return; }
+  if(!$('cname').value.trim()){ alert('Enter a customer name.'); return; }
+  const markup=+$('markup').value||0, wast=+$('wastage').value||0;
+  let total=0;
+  const ql=lines.map(l=>{
+    const prod=PRODUCTS.find(p=>p.code===l.code);
+    const c=unitCosting(prod, materials, markup);
+    const u=Math.ceil((l.area/prod.face)*(1+wast/100));
+    total+=u*c.price;
+    return {...l, units:u, unit_cost:c.cost, unit_price:c.price, line_total:u*c.price};
+  });
+  const n=quotes.length+1;
+  quotes.unshift({
+    quote_no:'TMS-'+String(n).padStart(4,'0'),
+    customer:$('cname').value.trim(), phone:$('cphone').value.trim(),
+    type:$('ctype').value, site:$('csite').value.trim(),
+    markup, wastage:wast, lines:ql, total,
+    cost_basis:{...materials},          // the snapshot that makes stale detection possible
+    status:'draft', created:new Date().toISOString(),
+    valid_days:+$('validdays').value||14
+  });
+  store.set(LS_Q, quotes);
+  alert('Saved as TMS-'+String(n).padStart(4,'0'));
+  renderSaved();
+}
+function newQuote(){ lines=[]; ['cname','cphone','csite','ldesc'].forEach(i=>$(i).value=''); renderLines(); }
+function setStatus(i,s){ quotes[i].status=s; store.set(LS_Q, quotes); renderSaved(); }
+function delQuote(i){ if(confirm('Delete this quote?')){ quotes.splice(i,1); store.set(LS_Q, quotes); renderSaved(); } }
+
+function renderSaved(){
+  const tb=$('savedRows'), sw=$('staleWrap');
+  if(!quotes.length){
+    tb.innerHTML='<tr><td colspan="7" class="mini" style="padding:18px 10px">No saved quotes yet.</td></tr>';
+    sw.innerHTML=''; return;
+  }
+  let stale=0, exposure=0;
+  tb.innerHTML=quotes.map((q,i)=>{
+    const drift=((materials.CEMENT-q.cost_basis.CEMENT)/q.cost_basis.CEMENT)*100;
+    const isStale=q.status==='sent'&&Math.abs(drift)>0.05;
+    if(isStale&&drift>0){
+      stale++;
+      const totalUnits=q.lines.reduce((s,l)=>s+l.units,0);
+      const then=unitCosting(PRODUCTS.find(p=>p.code===q.lines[0].code),q.cost_basis,q.markup).cost;
+      const now =unitCosting(PRODUCTS.find(p=>p.code===q.lines[0].code),materials,q.markup).cost;
+      exposure+=(now-then)*totalUnits;
+    }
+    const cls=drift>0.05?'up':drift<-0.05?'down':'same';
+    const arrow=drift>0.05?'▲':drift<-0.05?'▼':'—';
+    return `<tr>
+      <td><b>${q.quote_no}</b></td>
+      <td>${q.customer}<div class="mini">${q.site||''}</div></td>
+      <td class="num"><b>${M(q.total)}</b></td>
+      <td>${new Date(q.created).toLocaleDateString('en-ZA')}</td>
+      <td><span class="pill p-${q.status}">${q.status}</span></td>
+      <td><span class="chg ${cls}">${arrow} cement ${M(q.cost_basis.CEMENT)}${Math.abs(drift)>0.05?' → '+M(materials.CEMENT):''}</span></td>
+      <td class="noprint" style="white-space:nowrap">
+        ${q.status==='draft'?`<button class="btn sm" onclick="setStatus(${i},'sent')">Mark sent</button> `:''}
+        ${q.status==='sent'?`<button class="btn sm" onclick="setStatus(${i},'accepted')">Accepted</button> `:''}
+        <button class="btn dgr sm" onclick="delQuote(${i})">Delete</button>
+      </td></tr>`;
+  }).join('');
+  sw.innerHTML = stale
+    ? `<div class="alert a-warn"><b>⚠ ${stale} quote${stale>1?'s are':' is'} still out at an old cost base.</b>
+        Cement has moved since ${stale>1?'they were':'it was'} priced. If ${stale>1?'they are':'it is'} accepted as-is,
+        you absorb roughly <b>${M(exposure)}</b>. Re-issue, or accept the hit knowingly — but do not be surprised by it.</div>`
+    : `<div class="alert a-ok"><b>No stale quotes.</b> Everything sent is priced on your current material costs.</div>`;
+}
+
+/* ---------- materials ---------- */
+const MATNAMES={CEMENT:['Cement','50 kg bag'],SAND:['River sand','12 m³ load'],STONE:['Crushed stone','ton'],PIGMENT:['Oxide pigment','25 kg bag']};
+function renderMaterials(){
+  $('matRows').innerHTML=Object.keys(BASE).map(k=>{
+    const d=((materials[k]-BASE[k])/BASE[k])*100;
+    const cls=d>0.05?'up':d<-0.05?'down':'same';
+    const txt=Math.abs(d)<0.05?'at baseline':(d>0?'▲ '+d.toFixed(1)+'%':'▼ '+Math.abs(d).toFixed(1)+'%');
+    return `<div class="mat">
+      <div><b>${MATNAMES[k][0]}</b><div class="mini">per ${MATNAMES[k][1]}</div></div>
+      <div><label>Current price (M)</label><input type="number" id="m_${k}" value="${materials[k]}" step="0.01" oninput="livePrice()"></div>
+      <div><label>Aug 2026 baseline</label><input value="${BASE[k].toFixed(2)}" disabled style="background:#f7f4ef;color:#968b81"></div>
+      <div class="chg ${cls}" style="padding-bottom:10px">${txt}</div>
+    </div>`;
+  }).join('');
+}
+function livePrice(){
+  const t={}; Object.keys(BASE).forEach(k=>t[k]=parseFloat($('m_'+k).value)||BASE[k]);
+  renderPriceList(t);
+}
+function saveMaterials(){
+  Object.keys(BASE).forEach(k=>materials[k]=parseFloat($('m_'+k).value)||BASE[k]);
+  store.set(LS_MAT, materials);
+  renderMaterials(); renderPriceList(); renderLines();
+  alert('Prices saved. Every quote screen now uses these.');
+}
+function resetMaterials(){
+  materials={...BASE}; store.set(LS_MAT, materials);
+  renderMaterials(); renderPriceList(); renderLines();
+}
+function renderPriceList(tmp){
+  const p=tmp||materials, markup=+$('markup').value||40;
+  $('plMarkup').textContent=markup;
+  $('plRows').innerHTML=PRODUCTS.map(prod=>{
+    const c=unitCosting(prod,p,markup);
+    return `<tr><td><b>${prod.code}</b><div class="mini">${prod.name}</div></td>
+      <td class="num">${Math.round(c.perBatch).toLocaleString('en-US')}</td>
+      <td class="num">${M(c.material)}</td><td class="num">${M(c.cost)}</td>
+      <td class="num"><b>${M(c.price)}</b></td><td class="num"><b>${M(c.perM2)}</b></td></tr>`;
+  }).join('');
+}
+
+renderLines(); renderMaterials(); renderPriceList();
+</script>
+</body>
+</html>
