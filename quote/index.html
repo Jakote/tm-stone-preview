@@ -214,7 +214,7 @@ tr:last-child td{border-bottom:none}
           <option value="per_day">Per day</option>
           <option value="per_job">Fixed price for the job</option>
         </select></div>
-      <div><label>Override charge (M)</label><input type="number" id="ioverride" placeholder="leave blank to use calc" step="0.01"></div>
+      <div><label>Override charge (M)</label><input type="text" inputmode="decimal" id="ioverride" placeholder="leave blank to use calc" step="0.01"></div>
       <div></div><div></div>
     </div>
 
@@ -332,8 +332,8 @@ tr:last-child td{border-bottom:none}
     <div class="g4">
       <div><label>Date</label><input type="date" id="d_date"></div>
       <div><label>Material</label><select id="d_mat"></select></div>
-      <div><label>Quantity</label><input type="number" id="d_qty" step="0.5" min="0"></div>
-      <div><label>Total paid (M)</label><input type="number" id="d_paid" step="10" min="0"></div>
+      <div><label>Quantity</label><input type="text" inputmode="decimal" id="d_qty" step="0.5" min="0"></div>
+      <div><label>Total paid (M)</label><input type="text" inputmode="decimal" id="d_paid" step="10" min="0"></div>
     </div>
     <div class="g3" style="margin-top:10px">
       <div><label>Invoice no.</label><input id="d_inv"></div>
@@ -433,7 +433,7 @@ tr:last-child td{border-bottom:none}
     <div class="g4" style="margin-top:12px">
       <div><label>Cost name</label><input id="oh_name" placeholder="e.g. Yard rent"></div>
       <div><label>Category</label><select id="oh_cat"><option>fixed</option><option>labour</option><option>utilities</option><option>equipment</option><option>other</option></select></div>
-      <div><label>Per month (M)</label><input type="number" id="oh_amt" step="50" min="0"></div>
+      <div><label>Per month (M)</label><input type="text" inputmode="decimal" id="oh_amt" step="50" min="0"></div>
       <div><button class="btn" onclick="addOverhead()">Add</button></div>
     </div>
     <div class="tot" style="margin-top:16px">
@@ -471,7 +471,7 @@ tr:last-child td{border-bottom:none}
     <div id="mouldRows"></div>
     <div class="g4" style="margin-top:12px">
       <div><label>Product</label><select id="md_prod"></select></div>
-      <div><label>Mould cost (M)</label><input type="number" id="md_cost" step="100" min="0"></div>
+      <div><label>Mould cost (M)</label><input type="text" inputmode="decimal" id="md_cost" step="100" min="0"></div>
       <div><label>Expected pours</label><input type="number" id="md_pours" step="1000" min="1" value="20000"></div>
       <div><button class="btn" onclick="addMould()">Add mould</button></div>
     </div>
@@ -541,7 +541,7 @@ tr:last-child td{border-bottom:none}
     <div class="sub">At today's material costs. Print this and leave it with every contractor in Maseru.</div>
     <table><thead><tr><th>Product</th><th>Tier</th><th class="num">From (m²)</th><th class="num">Per paver</th><th class="num">Per m²</th><th>Terms</th></tr></thead>
       <tbody id="tListRows"></tbody></table>
-    <div style="margin-top:14px" class="noprint"><button class="btn ghost" onclick="window.print()">Print price list</button></div>
+    <div style="margin-top:14px" class="noprint"><button class="btn ghost" onclick="printPriceList()">Print price list</button></div>
     <p class="mini" style="margin-top:10px">Prices ex-yard, collection by the buyer. Delivery quoted separately. Valid while material costs hold — reprint when cement moves.</p>
   </div>
 
@@ -590,9 +590,9 @@ tr:last-child td{border-bottom:none}
     <h2>Other installation costs</h2>
     <div class="sub">Per m² unless stated</div>
     <div class="g3">
-      <div><label>Bedding sand etc. (M per m²)</label><input type="number" id="s_bed" step="0.5" min="0"></div>
-      <div><label>Base preparation (M per m², normal ground)</label><input type="number" id="s_base" step="1" min="0"></div>
-      <div><label>Transport per trip (M)</label><input type="number" id="s_trans" step="10" min="0"></div>
+      <div><label>Bedding sand etc. (M per m²)</label><input type="text" inputmode="decimal" id="s_bed" step="0.5" min="0"></div>
+      <div><label>Base preparation (M per m², normal ground)</label><input type="text" inputmode="decimal" id="s_base" step="1" min="0"></div>
+      <div><label>Transport per trip (M)</label><input type="text" inputmode="decimal" id="s_trans" step="10" min="0"></div>
     </div>
     <div style="margin-top:14px;display:flex;gap:9px;align-items:center;flex-wrap:wrap">
       <button class="btn" onclick="saveInstall()">Save</button>
@@ -836,21 +836,30 @@ function renderMaterials(){
     const txt=Math.abs(d)<0.05?'at baseline':(d>0?'▲ '+d.toFixed(1)+'%':'▼ '+Math.abs(d).toFixed(1)+'%');
     return `<div class="mat">
       <div><b>${MATNAMES[k][0]}</b><div class="mini">per ${MATNAMES[k][1]}</div></div>
-      <div><label>Current price (M)</label><input type="number" id="m_${k}" value="${materials[k]}" step="0.01" oninput="livePrice()"></div>
+      <div><label>Current price (M)</label><input type="text" inputmode="decimal" id="m_${k}" value="${materials[k]}" oninput="livePrice()"></div>
       <div><label>Aug 2026 baseline</label><input value="${BASE[k].toFixed(2)}" disabled style="background:#f7f4ef;color:#968b81"></div>
       <div class="chg ${cls}" style="padding-bottom:10px">${txt}</div>
     </div>`;
   }).join('');
 }
 function livePrice(){
-  const t={}; Object.keys(BASE).forEach(k=>t[k]=parseFloat($('m_'+k).value)||BASE[k]);
+  const t={}; Object.keys(BASE).forEach(k=>{ const v=parseMoney($('m_'+k).value); t[k]= v==null?materials[k]:v; });
   renderPriceList(t);
 }
 function saveMaterials(){
-  Object.keys(BASE).forEach(k=>materials[k]=parseFloat($('m_'+k).value)||BASE[k]);
+  // Never fall back to the baseline: an unreadable entry must keep the CURRENT price and
+  // say so, not silently undo a price a delivery correctly set.
+  const bad=[];
+  Object.keys(BASE).forEach(k=>{
+    const v=parseMoney($('m_'+k).value);
+    if (v==null) bad.push(k); else materials[k]=v;
+  });
+  window.__matBad = bad;   // reported in the single save message below, not a second popup
   store.set(LS_MAT, materials);
   renderMaterials(); renderPriceList(); renderLines();
-  alert('Prices saved. Every quote screen now uses these.');
+  alert((window.__matBad && window.__matBad.length)
+    ? 'Saved — but could not read: ' + window.__matBad.join(', ') + '. Those prices were left unchanged.'
+    : 'Prices saved. Every quote screen now uses these.');
 }
 function resetMaterials(){
   materials={...BASE}; store.set(LS_MAT, materials);
@@ -947,7 +956,8 @@ function renderInstall(){
 
   /* If the job runs 2 days over, who pays? That is the real difference between
      these options — not the headline price, which is the same for the first two. */
-  const dayCost = install.crew * install.rate;
+  const _crewNow = (typeof currentCrew === 'function' && crews && crews.length) ? currentCrew() : null;
+  const dayCost = _crewNow ? (_crewNow.size * _crewNow.rate) : (install.crew * install.rate);
   const over = 2 * dayCost;
   const perM2 = rows.find(r=>r.mode==='per_m2'), perDay = rows.find(r=>r.mode==='per_day'), perJob = rows.find(r=>r.mode==='per_job');
 
@@ -977,14 +987,20 @@ function currentInstall(){
 }
 
 function renderInstallSettings(){
-  $('s_crew').value=install.crew; $('s_rate').value=install.rate; $('s_speed').value=install.speed;
+  // crew size, day rate and speed live on the CREWS table (Prices & Rates), not here —
+  // these three refs never existed and threw, killing every statement after this call.
   $('s_bed').value=install.bed;   $('s_base').value=install.base; $('s_trans').value=install.trans;
   $('s_confirmed').checked=!!install.confirmed;
 }
 function saveInstall(){
+  // crew/rate/speed are kept per crew on the CREWS table; only the rates on this card
+  // belong here. Reading three non-existent inputs threw and made saving impossible,
+  // so the "these are estimates" banner could never be cleared.
   install = {
-    crew:+$('s_crew').value||4, rate:+$('s_rate').value||200, speed:+$('s_speed').value||35,
-    bed:+$('s_bed').value||0, base:+$('s_base').value||0, trans:+$('s_trans').value||0,
+    ...install,
+    bed:parseMoney($('s_bed').value)||0,
+    base:parseMoney($('s_base').value)||0,
+    trans:parseMoney($('s_trans').value)||0,
     confirmed: $('s_confirmed').checked
   };
   store.set('tms_install', install);
@@ -1888,16 +1904,31 @@ function renderInvHint(){
   const pct = Math.min(Math.max(+$('i_pct').value||100, 1), 100);
   const sub = jobValue(j) * pct/100;
   const vat = invCfg.vatRegistered ? sub * invCfg.vatRate/100 : 0;
+  const done = alreadyInvoiced(j.job_no), room = jobValue(j) - done;
+  const warn = done > 0.005
+    ? `<br><b>${M(done)} of ${M(jobValue(j))} already invoiced on this job — ${M(room)} left to bill.</b>`
+    : '';
   $('i_hint').innerHTML = `${pct}% of ${j.job_no} = <b>${M(sub)}</b>`
     + (invCfg.vatRegistered ? ` + VAT ${M(vat)} = <b>${M(sub+vat)}</b>` : ' — no VAT added')
-    + `, due in ${+$('i_terms').value||invCfg.terms} days.`;
+    + `, due in ${+$('i_terms').value||invCfg.terms} days.` + warn;
 }
 
+function alreadyInvoiced(job_no){
+  return invoices.filter(i=>i.job_no===job_no && !i.written_off)
+                 .reduce((s,i)=>s + (+i.subtotal||0), 0);
+}
 function raiseInvoice(){
   const j = jobs.find(x=>x.job_no===$('i_job').value);
   if (!j){ alert('Create a job first.'); return; }
   const pct = Math.min(Math.max(+$('i_pct').value||100, 1), 100);
   const sub = jobValue(j) * pct/100;
+  // A deposit followed by a 100% final billed 150% of the job with no warning.
+  const done = alreadyInvoiced(j.job_no), room = jobValue(j) - done;
+  if (done > 0.005 && sub > room + 0.005){
+    if (!confirm('You have already invoiced ' + M(done) + ' of ' + M(jobValue(j)) + ' on '
+        + j.job_no + '.\nThis would take the total to ' + M(done + sub)
+        + ' — ' + M(done + sub - jobValue(j)) + ' more than the job is worth.\n\nRaise it anyway?')) return;
+  }
   if (!(sub > 0)){ alert('That job has no value on its quote.'); return; }
   const vat = invCfg.vatRegistered ? sub * invCfg.vatRate/100 : 0;
   const terms = +$('i_terms').value || invCfg.terms;
@@ -2075,18 +2106,35 @@ function printCurrentQuote(){
 
 /* ---------- invoice ---------- */
 function invoiceLines(inv){
-  const q = quotes.find(x=>{
-    const j = jobs.find(y=>y.job_no===inv.job_no);
-    return j && x.quote_no===j.quote_no;
-  });
-  if (inv.pct >= 100 && q) return q.lines.map(l=>({
-    desc:(l.desc||l.name), detail:`${l.area} m² · ${l.units.toLocaleString('en-US')} pavers`,
-    qty:l.units, price:l.unit_price, total:l.line_total }));
+  const j = jobs.find(y=>y.job_no===inv.job_no);
+  const q = j && quotes.find(x=>x.quote_no===j.quote_no);
+  const sub = +inv.subtotal || 0;
+
+  // A full invoice may show the quote's own lines ONLY when they add up to what is being
+  // billed. They do not when installation is charged, or when the job price was adjusted —
+  // and a customer document whose lines miss its total is indefensible.
+  if (inv.pct >= 100 && q) {
+    const supply = q.lines.reduce((s,l)=>s + (+l.line_total||0), 0);
+    const ins    = (q.install && +q.install.charge) || 0;
+    const lines  = q.lines.map(l=>({ desc:(l.desc||l.name),
+      detail:`${l.area} m² · ${(+l.units).toLocaleString('en-US')} pavers`,
+      qty:l.units, price:l.unit_price, total:l.line_total }));
+    if (ins > 0) lines.push({ desc:'Installation — laying'
+        + (q.install.basis ? ', ' + q.install.basis : ''), detail:'', qty:1, price:ins, total:ins });
+    const listed = supply + ins;
+    const diff = sub - listed;
+    // job price adjusted on the job — show it as its own line rather than silently differ
+    if (Math.abs(diff) > 0.005) lines.push({
+      desc: diff < 0 ? 'Adjustment agreed for this job' : 'Additional agreed for this job',
+      detail: 'Quoted ' + M(listed), qty:1, price:diff, total:diff });
+    return lines;
+  }
+
   const label = inv.kind==='deposit' ? `Deposit — ${inv.pct}% of ${inv.job_no}`
               : inv.kind==='progress' ? `Progress payment — ${inv.pct}% of ${inv.job_no}`
               : `${inv.pct}% of ${inv.job_no}`;
   return [{ desc:label, detail: q ? 'Against quotation '+q.quote_no : '', qty:1,
-            price:inv.subtotal, total:inv.subtotal }];
+            price:sub, total:sub }];
 }
 
 /* Does the work this invoice bills for include laying? Drives whether SANS 1200MJ
@@ -2133,6 +2181,29 @@ function invoiceDocHtml(inv){
         Payment due by ${dmy(inv.due)}.</span></div>`
     + docFoot(invoiceIncludesInstall(inv));
 }
+
+/* A price list you hand to a contractor is a customer document. Printing the screen
+   put "Cost to make M65,384.16 · Profit M14,384.52" on the sheet he was told to leave
+   with every contractor in Maseru, with no letterhead on it either. */
+function printPriceList(){
+  const markup = +$('markup').value || 40;
+  const rows = PRODUCTS.map(prod=>{
+    const c = unitCosting(prod, materials, markup);
+    return `<tr><td>${prod.name}<div style="font-size:9pt;color:#555">${prod.code} · ${(1/prod.face).toFixed(0)} per m²</div></td>
+      <td class="num">${M(c.price)}</td><td class="num">${M(c.perM2)}</td></tr>`;
+  }).join('');
+  const d = new Date();
+  showDoc(docHead('PRICE LIST',
+      `Effective ${dmy(d.toISOString())}<br><span style="font-size:9pt">Prices held for 14 days</span>`)
+    + `<table><thead><tr><th>Product</th><th class="num">Per paver</th><th class="num">Per m²</th></tr></thead>
+       <tbody>${rows}</tbody></table>`
+    + `<div class="docpay"><h4>Terms</h4>
+        Prices are for supply from the yard and exclude installation and delivery.
+        Quoted on current material costs and held for 14 days from the date above.
+        Volume pricing is available for trade accounts — please ask.</div>`
+    + docFoot(false));
+}
+
 function printInvoice(i){ showDoc(invoiceDocHtml(invoices[i])); }
 
 
@@ -2192,7 +2263,7 @@ function priceLine(i, j){
   return `<div class="alert ${tone}" style="margin:0">
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:7px">
         <div style="flex:1;min-width:150px"><label>Price for this job (M)</label>
-          <input type="number" step="100" value="${now.toFixed(2)}"
+          <input type="text" inputmode="decimal" value="${now.toFixed(2)}"
                  onchange="setJobPrice(${i}, this.value)"></div>
         <div class="mini">
           Quoted ${M(quoted)}${Math.abs(diff) > 0.005
