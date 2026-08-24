@@ -569,8 +569,11 @@ function saveInstall(){
   renderInstall();
   alert(install.confirmed ? 'Installation rates saved and confirmed.' : 'Saved — still marked as estimates.');
 }
+/* Changing any installation control must re-run the whole quote, not just the
+   comparison table — the total includes installation. renderLines() calls
+   renderInstall() at the end, so this is one pass, not a loop. */
 ['imode','ibase','itrips','ioverride'].forEach(id=>{
-  const el=$(id); if(el){ el.addEventListener('input',renderInstall); el.addEventListener('change',renderInstall); }
+  const el=$(id); if(el){ el.addEventListener('input',renderLines); el.addEventListener('change',renderLines); }
 });
 
 renderLines(); renderMaterials(); renderPriceList(); renderInstall(); renderInstallSettings();
