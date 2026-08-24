@@ -535,12 +535,25 @@ function renderInstall(){
   }).join('');
 
   const extra = best.profit - rows.find(r=>r.mode==='per_m2').profit;
+
+  /* If the job runs 2 days over, who pays? That is the real difference between
+     these options — not the headline price, which is the same for the first two. */
+  const dayCost = install.crew * install.rate;
+  const over = 2 * dayCost;
+  const perM2 = rows.find(r=>r.mode==='per_m2'), perDay = rows.find(r=>r.mode==='per_day'), perJob = rows.find(r=>r.mode==='per_job');
+
   $('iNote').innerHTML =
     `Cost breakdown: ${c.days} day${c.days>1?'s':''} · labour ${M(c.labour)} · bedding ${M(c.cons)}`+
     (c.base? ' · base prep '+M(c.base):'')+` · transport ${M(c.trans)}.`+
     (best.mode!=='per_m2' && extra>1
-      ? ` <b>Charging ${best.label.toLowerCase()} earns ${M(extra)} more than per m² on this job</b> — because you carry the risk of it running long, and keep the gain if it doesn't.`
-      : '');
+      ? ` <b>Fixed price earns ${M(extra)} more than per m² here</b> — you carry the risk of it running long and keep the gain if it doesn't.`
+      : '')+
+    `<br><br><b>Per m² and per day charge the same today — the difference is who pays if it runs long.</b>
+     Say the site is worse than it looked and it takes 2 extra days (${M(over)} of crew time):
+     <br>· <b>Per m²</b> — you absorb it. Profit falls to ${M(perM2.profit-over)}.
+     <br>· <b>Per day</b> — the customer pays for the extra days. Profit holds near ${M(perDay.profit)}.
+     <br>· <b>Fixed price</b> — you absorb it, but you started ${M(extra)} ahead. Profit ${M(perJob.profit-over)}.
+     <br><span style="color:var(--ink3)">Rule of thumb: known, open site → fixed price. Awkward or unknown ground → per day.</span>`;
 }
 
 function currentInstall(){
