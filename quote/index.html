@@ -132,6 +132,34 @@ tr:last-child td{border-bottom:none}
     </table>
   </div>
 
+
+  <div class="card noprint" id="installCard">
+    <h2>Installation</h2>
+    <div class="sub" id="installSub">How you charge for laying it — compare all three before you commit</div>
+
+    <div id="rateWarn"></div>
+
+    <div class="g4" style="margin-bottom:14px">
+      <div><label>Charge installation</label>
+        <select id="imode">
+          <option value="none">Supply only — no installation</option>
+          <option value="per_m2">Per m²</option>
+          <option value="per_day">Per day</option>
+          <option value="per_job">Fixed price for the job</option>
+        </select></div>
+      <div><label>Base preparation</label>
+        <select id="ibase"><option value="1">Include (excavate + sub-base)</option><option value="0">Exclude — base is ready</option></select></div>
+      <div><label>Transport trips</label><input type="number" id="itrips" value="1" min="0" step="1"></div>
+      <div><label>Override charge (M)</label><input type="number" id="ioverride" placeholder="leave blank to use calc" step="0.01"></div>
+    </div>
+
+    <table id="iCompare">
+      <thead><tr><th>Option</th><th>Basis</th><th class="num">You charge</th><th class="num">It costs you</th><th class="num">Profit</th><th class="num">Margin</th></tr></thead>
+      <tbody id="iRows"></tbody>
+    </table>
+    <p class="mini" id="iNote" style="margin-top:11px"></p>
+  </div>
+
   <div class="tot">
     <div>
       <div class="lbl">Quote total</div>
@@ -170,6 +198,29 @@ tr:last-child td{border-bottom:none}
       <button class="btn" onclick="saveMaterials()">Save prices</button>
       <button class="btn ghost" onclick="resetMaterials()">Reset to August 2026 baseline</button>
     </div>
+  </div>
+
+
+  <div class="card">
+    <h2>Installation rates</h2>
+    <div class="sub">What laying a job actually costs you. Everything above is calculated from these.</div>
+    <div class="g3">
+      <div><label>Crew size (people)</label><input type="number" id="s_crew" step="1" min="1"></div>
+      <div><label>Day rate per person (M)</label><input type="number" id="s_rate" step="10" min="0"></div>
+      <div><label>Laying speed (m² per day)</label><input type="number" id="s_speed" step="1" min="1"></div>
+    </div>
+    <div class="g3" style="margin-top:11px">
+      <div><label>Bedding sand etc. (M per m²)</label><input type="number" id="s_bed" step="0.5" min="0"></div>
+      <div><label>Base preparation (M per m²)</label><input type="number" id="s_base" step="1" min="0"></div>
+      <div><label>Transport per trip (M)</label><input type="number" id="s_trans" step="10" min="0"></div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:9px;align-items:center;flex-wrap:wrap">
+      <button class="btn" onclick="saveInstall()">Save installation rates</button>
+      <label style="display:flex;align-items:center;gap:7px;margin:0;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink2)">
+        <input type="checkbox" id="s_confirmed" style="width:auto"> These are my real figures
+      </label>
+    </div>
+    <p class="mini" style="margin-top:10px">Until that box is ticked, every quote shows a warning that installation prices are estimates.</p>
   </div>
 
   <div class="card">
@@ -281,13 +332,17 @@ function renderLines(){
       <td class="num"><b>${M(lt)}</b></td>
       <td class="noprint"><button class="btn dgr sm" onclick="delLine(${i})">Remove</button></td></tr>`;
   }).join('');
+  const ins = (typeof currentInstall==='function') ? currentInstall() : {charge:0,cost:0,mode:'none'};
+  total += ins.charge; cost += ins.cost;
   $('qtotal').textContent=M(total);
   const profit=total-cost;
   $('qbrk').innerHTML =
     `${area.toFixed(1)} m² · ${units.toLocaleString('en-US')} pavers · incl. ${wast}% wastage<br>`+
     `Cost to make <b>${M(cost)}</b> · Gross profit <b>${M(profit)}</b> (${(profit/total*100).toFixed(1)}% of price)<br>`+
-    `Average <b>${M(total/(area||1))}</b> per m²`;
+    `Average <b>${M(total/(area||1))}</b> per m²` +
+    (ins.mode!=='none' ? `<br>Installation (${ins.mode.replace('_',' ')}): <b>${M(ins.charge)}</b>` : '<br>Supply only — installation not included');
   checkDrift();
+  if (typeof renderInstall==='function') renderInstall();
 }
 ['markup','wastage','validdays'].forEach(id=>$(id).addEventListener('input',renderLines));
 
@@ -414,7 +469,111 @@ function renderPriceList(tmp){
   }).join('');
 }
 
-renderLines(); renderMaterials(); renderPriceList();
+
+/* ============ INSTALLATION ============
+   One cost model, three ways to charge from it.
+   per_job carries a premium because TM Stone takes the risk of the job running
+   long — and keeps the upside when the crew finishes early. */
+const INSTALL_DEFAULTS = { crew:4, rate:200, speed:35, bed:12, base:55, trans:350, confirmed:false };
+let install = store.get('tms_install', null) || {...INSTALL_DEFAULTS};
+
+function installCost(area, includeBase, trips){
+  const days  = Math.ceil(area / (install.speed || 1));
+  const labour= days * install.crew * install.rate;
+  const cons  = area * install.bed;
+  const base  = includeBase ? area * install.base : 0;
+  const trans = (trips||0) * install.trans;
+  return { days, labour, cons, base, trans, total: labour+cons+base+trans };
+}
+
+function installOptions(area, markup, includeBase, trips){
+  const c = installCost(area, includeBase, trips);
+  const mk = 1 + markup/100;
+  const perM2Charge = c.total * mk;
+  const perDayCharge= c.total * mk;                 // same cost base, charged by the day
+  const perJobCharge= c.total * (1 + (markup+10)/100);
+  const row = (mode,label,basis,charge)=>({
+    mode, label, basis, charge, cost:c.total,
+    profit: charge-c.total,
+    margin: charge ? (charge-c.total)/charge*100 : 0
+  });
+  return { c, rows:[
+    row('per_m2','Per m²',  M(perM2Charge/(area||1))+' /m² × '+area.toFixed(1)+' m²', perM2Charge),
+    row('per_day','Per day', c.days+' day'+(c.days>1?'s':'')+' × '+M(perDayCharge/(c.days||1))+' /day', perDayCharge),
+    row('per_job','Fixed price', 'one price for the whole job (~'+c.days+' day'+(c.days>1?'s':'')+')', perJobCharge)
+  ]};
+}
+
+function renderInstall(){
+  const area = lines.reduce((s,l)=>s+l.area, 0);
+  const markup = +$('markup').value || 40;
+  const includeBase = $('ibase').value === '1';
+  const trips = +$('itrips').value || 0;
+  const mode = $('imode').value;
+
+  $('rateWarn').innerHTML = install.confirmed ? '' :
+    '<div class="alert a-warn"><b>Installation rates are still estimates.</b> Set your real crew size, day rate and laying speed under <b>Material Prices → Installation rates</b>, then tick "These are my real figures". Until then, do not send an installation price to a customer.</div>';
+
+  if (!area || mode === 'none'){
+    $('iRows').innerHTML = '<tr><td colspan="6" class="mini" style="padding:16px 10px">'+
+      (area ? 'Supply only — no installation charged.' : 'Add an item above to compare installation options.')+'</td></tr>';
+    $('iNote').textContent = '';
+    return;
+  }
+
+  const { c, rows } = installOptions(area, markup, includeBase, trips);
+  const best = rows.reduce((a,b)=> b.profit > a.profit ? b : a);
+  $('iRows').innerHTML = rows.map(r=>{
+    const on = r.mode === mode;
+    return `<tr style="${on?'background:#fdf6f2':''}">
+      <td><b>${r.label}</b>${r.mode===best.mode?' <span class="pill p-accepted">best</span>':''}${on?' <span class="pill p-sent">chosen</span>':''}</td>
+      <td class="mini">${r.basis}</td>
+      <td class="num"><b>${M(r.charge)}</b></td>
+      <td class="num">${M(r.cost)}</td>
+      <td class="num">${M(r.profit)}</td>
+      <td class="num">${r.margin.toFixed(1)}%</td></tr>`;
+  }).join('');
+
+  const extra = best.profit - rows.find(r=>r.mode==='per_m2').profit;
+  $('iNote').innerHTML =
+    `Cost breakdown: ${c.days} day${c.days>1?'s':''} · labour ${M(c.labour)} · bedding ${M(c.cons)}`+
+    (c.base? ' · base prep '+M(c.base):'')+` · transport ${M(c.trans)}.`+
+    (best.mode!=='per_m2' && extra>1
+      ? ` <b>Charging ${best.label.toLowerCase()} earns ${M(extra)} more than per m² on this job</b> — because you carry the risk of it running long, and keep the gain if it doesn't.`
+      : '');
+}
+
+function currentInstall(){
+  const area = lines.reduce((s,l)=>s+l.area, 0);
+  const mode = $('imode').value;
+  if (!area || mode === 'none') return { mode:'none', charge:0, cost:0, days:0 };
+  const { c, rows } = installOptions(area, +$('markup').value||40, $('ibase').value==='1', +$('itrips').value||0);
+  const chosen = rows.find(r=>r.mode===mode);
+  const override = parseFloat($('ioverride').value);
+  const charge = isNaN(override) ? chosen.charge : override;
+  return { mode, charge, cost:c.total, days:c.days, basis:chosen.basis };
+}
+
+function renderInstallSettings(){
+  $('s_crew').value=install.crew; $('s_rate').value=install.rate; $('s_speed').value=install.speed;
+  $('s_bed').value=install.bed;   $('s_base').value=install.base; $('s_trans').value=install.trans;
+  $('s_confirmed').checked=!!install.confirmed;
+}
+function saveInstall(){
+  install = {
+    crew:+$('s_crew').value||4, rate:+$('s_rate').value||200, speed:+$('s_speed').value||35,
+    bed:+$('s_bed').value||0, base:+$('s_base').value||0, trans:+$('s_trans').value||0,
+    confirmed: $('s_confirmed').checked
+  };
+  store.set('tms_install', install);
+  renderInstall();
+  alert(install.confirmed ? 'Installation rates saved and confirmed.' : 'Saved — still marked as estimates.');
+}
+['imode','ibase','itrips','ioverride'].forEach(id=>{
+  const el=$(id); if(el){ el.addEventListener('input',renderInstall); el.addEventListener('change',renderInstall); }
+});
+
+renderLines(); renderMaterials(); renderPriceList(); renderInstall(); renderInstallSettings();
 
 /* show whether we are on the shared database or this device only */
 (function(){
