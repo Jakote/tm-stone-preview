@@ -97,6 +97,7 @@ tr:last-child td{border-bottom:none}
     <button class="tab on" data-p="quote">New Quote</button>
     <button class="tab" data-p="saved">Saved Quotes</button>
     <button class="tab" data-p="jobs">Jobs &amp; Yard</button>
+    <button class="tab" data-p="stock">Stock</button>
     <button class="tab" data-p="setup">My Costs</button>
     <button class="tab" data-p="trade">Trade Supply</button>
     <button class="tab" data-p="materials">Prices &amp; Rates</button>
@@ -262,6 +263,51 @@ tr:last-child td{border-bottom:none}
     </div>
     <div style="margin-top:11px"><button class="btn" onclick="addJob()">Create the job</button></div>
     <div id="jobRows" style="margin-top:16px"></div>
+  </div>
+
+</div>
+
+
+<div class="page" id="p-stock">
+
+  <div class="card">
+    <h2>Do I order today?</h2>
+    <div class="sub">Worked out from what you poured, not from counting. Every batch you log
+      eats the recipe, so the system already knows what is left.</div>
+    <div id="reorderRows"></div>
+  </div>
+
+  <div class="card">
+    <h2>What the jobs you have already promised will eat</h2>
+    <div class="sub">The shortfall nobody sees until the mixer stops.</div>
+    <table><thead><tr><th>Material</th><th class="num">Needed</th><th class="num">On hand</th>
+      <th class="num">Short by</th></tr></thead><tbody id="committedRows"></tbody></table>
+  </div>
+
+  <div class="card">
+    <h2>Book in a delivery</h2>
+    <div class="sub">This is also how prices get updated. What you actually paid becomes the
+      price every new quote is built on — and any quote still out on the old price gets flagged.</div>
+    <div class="g4">
+      <div><label>Date</label><input type="date" id="d_date"></div>
+      <div><label>Material</label><select id="d_mat"></select></div>
+      <div><label>Quantity</label><input type="number" id="d_qty" step="0.5" min="0"></div>
+      <div><label>Total paid (M)</label><input type="number" id="d_paid" step="10" min="0"></div>
+    </div>
+    <div class="g3" style="margin-top:10px">
+      <div><label>Invoice no.</label><input id="d_inv"></div>
+      <div><label>Booked in by</label><input id="d_by" placeholder="name"></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn" onclick="logDelivery()">Book it in</button></div>
+    </div>
+    <p class="mini" id="d_hint" style="margin-top:9px"></p>
+    <div id="deliveryRows" style="margin-top:14px"></div>
+  </div>
+
+  <div class="card">
+    <h2>Opening stock and suppliers</h2>
+    <div class="sub">Set this once. After that the system keeps count for you — only correct it
+      if you do a physical count and it disagrees.</div>
+    <div id="stockSetRows"></div>
   </div>
 
 </div>
@@ -530,6 +576,7 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   if(t.dataset.p==='trade'){ renderTrade(); }
   if(t.dataset.p==='setup'){ renderSetup(); }
   if(t.dataset.p==='jobs'){ renderJobsPage(); }
+  if(t.dataset.p==='stock'){ renderStockPage(); }
 });
 
 /* ---------- quote lines ---------- */
@@ -631,14 +678,17 @@ function renderSaved(){
   }
   let stale=0, exposure=0;
   tb.innerHTML=quotes.map((q,i)=>{
-    const drift=((materials.CEMENT-q.cost_basis.CEMENT)/q.cost_basis.CEMENT)*100;
+    // Drift is measured on the WHOLE cost, not cement alone. Pigment at M1,600 a bag is
+    // 2.75 kg of every batch — a pigment rise used to move the real cost and flag nothing.
+    const prod0=PRODUCTS.find(p=>p.code===q.lines[0].code);
+    const costThen=unitCosting(prod0,q.cost_basis,q.markup).cost;
+    const costNow =unitCosting(prod0,materials,q.markup).cost;
+    const drift=((costNow-costThen)/costThen)*100;
+    const moved=Object.keys(q.cost_basis).filter(k=>Math.abs(materials[k]-q.cost_basis[k])>0.005);
     const isStale=q.status==='sent'&&Math.abs(drift)>0.05;
     if(isStale&&drift>0){
       stale++;
-      const totalUnits=q.lines.reduce((s,l)=>s+l.units,0);
-      const then=unitCosting(PRODUCTS.find(p=>p.code===q.lines[0].code),q.cost_basis,q.markup).cost;
-      const now =unitCosting(PRODUCTS.find(p=>p.code===q.lines[0].code),materials,q.markup).cost;
-      exposure+=(now-then)*totalUnits;
+      exposure+=(costNow-costThen)*q.lines.reduce((s,l)=>s+l.units,0);
     }
     const cls=drift>0.05?'up':drift<-0.05?'down':'same';
     const arrow=drift>0.05?'▲':drift<-0.05?'▼':'—';
@@ -648,7 +698,9 @@ function renderSaved(){
       <td class="num"><b>${M(q.total)}</b></td>
       <td>${new Date(q.created).toLocaleDateString('en-ZA')}</td>
       <td><span class="pill p-${q.status}">${q.status}</span></td>
-      <td><span class="chg ${cls}">${arrow} cement ${M(q.cost_basis.CEMENT)}${Math.abs(drift)>0.05?' → '+M(materials.CEMENT):''}</span></td>
+      <td><span class="chg ${cls}" title="${moved.map(k=>k+': '+M(q.cost_basis[k])+' → '+M(materials[k])).join(' · ')}">
+          ${arrow} ${Math.abs(drift)<=0.05 ? 'cost unchanged'
+            : moved.join(', ').toLowerCase()+' moved · cost '+M(costThen)+' → '+M(costNow)}</span></td>
       <td class="noprint" style="white-space:nowrap">
         ${q.status==='draft'?`<button class="btn sm" onclick="setStatus(${i},'sent')">Mark sent</button> `:''}
         ${q.status==='sent'?`<button class="btn sm" onclick="setStatus(${i},'accepted')">Accepted</button> `:''}
@@ -657,7 +709,7 @@ function renderSaved(){
   }).join('');
   sw.innerHTML = stale
     ? `<div class="alert a-warn"><b>⚠ ${stale} quote${stale>1?'s are':' is'} still out at an old cost base.</b>
-        Cement has moved since ${stale>1?'they were':'it was'} priced. If ${stale>1?'they are':'it is'} accepted as-is,
+        Your input costs have moved since ${stale>1?'they were':'it was'} priced. If ${stale>1?'they are':'it is'} accepted as-is,
         you absorb roughly <b>${M(exposure)}</b>. Re-issue, or accept the hit knowingly — but do not be surprised by it.</div>`
     : `<div class="alert a-ok"><b>No stale quotes.</b> Everything sent is priced on your current material costs.</div>`;
 }
@@ -1415,6 +1467,188 @@ function renderJobList(){
 
 ['r_prod','r_batches'].forEach(id=>{ const e=$(id); if(e) e.addEventListener('input', fillJobPickers); });
 
+
+/* ============ MODULE 3 — stock and procurement ============
+   He does not count stock. Module 2 already records how many batches were mixed and
+   the recipe says what a batch eats, so:
+        on hand = opening (or last count) + delivered - poured × recipe
+   Counting is a correction, never the daily job.
+   Mirrors erp/db/007_stock_procurement.sql — change both together. */
+const STOCK_UNITS = { CEMENT:'bags', SAND:'m³', STONE:'t', PIGMENT:'kg' };
+const MAT_NAMES   = { CEMENT:'Cement', SAND:'Sand', STONE:'Stone', PIGMENT:'Pigment' };
+const STOCK_DEFAULTS = () => ({
+  CEMENT:{opening:0, lead:3, supplier:'', counted:null, countedAt:null},
+  SAND:  {opening:0, lead:2, supplier:'', counted:null, countedAt:null},
+  STONE: {opening:0, lead:2, supplier:'', counted:null, countedAt:null},
+  PIGMENT:{opening:0, lead:7, supplier:'', counted:null, countedAt:null}
+});
+let stockCfg   = store.get('tms_stockcfg', null) || STOCK_DEFAULTS();
+let deliveries = store.get('tms_deliveries', []);
+
+/* what one batch eats, in the unit the material is stored in */
+function perBatchUsage(code){
+  const r = setup.recipe, k = setup.consts;
+  switch(code){
+    case 'CEMENT':  return r.cement;
+    case 'SAND':    return r.sand / 1000;
+    case 'STONE':   return (r.stone / 1000) * k.stoneT;
+    case 'PIGMENT': return r.pigment;
+    default: return 0;
+  }
+}
+/* the price of ONE stock unit, from the price list which is kept per purchase unit */
+function pricePerStockUnit(code){
+  const k = setup.consts;
+  switch(code){
+    case 'SAND':    return materials.SAND / k.sandLoad;   // priced per load of k.sandLoad m³
+    case 'PIGMENT': return materials.PIGMENT / k.pigBag;  // priced per bag of k.pigBag kg
+    default:        return materials[code];
+  }
+}
+const batchesPouredSince = since =>
+  runs.filter(r => !since || r.date >= since).reduce((s,r)=>s + (+r.batches||0), 0);
+
+function materialOnHand(code){
+  const c = stockCfg[code] || {};
+  const base = (c.counted != null ? +c.counted : +c.opening) || 0;
+  const delivered = deliveries.filter(d => d.code===code && (!c.countedAt || d.date >= c.countedAt))
+                              .reduce((s,d)=>s + (+d.qty||0), 0);
+  return base + delivered - perBatchUsage(code) * batchesPouredSince(c.countedAt);
+}
+const dailyUsage = code => setup.cap.batches * perBatchUsage(code);
+
+function reorderReport(){
+  return Object.keys(STOCK_UNITS).map(code=>{
+    const onHand = materialOnHand(code), daily = dailyUsage(code);
+    const lead = +(stockCfg[code]?.lead ?? 3);
+    const cover = daily > 0 ? onHand / daily : null;
+    let verdict, detail, tone;
+    // Never cry OUT OF STOCK at a system that has simply not been set up. Not knowing
+    // and having none are different things, and only one of them stops the yard.
+    const known = !!stockCfg[code].countedAt || deliveries.some(d=>d.code===code);
+    if (!known){ verdict='not set up yet'; tone='ok';
+      detail='No opening stock recorded. Count what is in the yard and enter it below — '
+             +'after that the system keeps count from what you pour.'; }
+    else if (onHand <= 0){ verdict='OUT OF STOCK'; tone='bad';
+      detail='Nothing left. The yard stops until a delivery arrives — this supplier takes '+lead+' days.'; }
+    else if (cover === null){ verdict='no usage yet'; tone='ok';
+      detail='Nothing poured yet, so there is no rate to work from.'; }
+    else if (cover <= lead){ verdict='ORDER TODAY'; tone='bad';
+      detail=cover.toFixed(1)+' days left but delivery takes '+lead+' days — you run out before it arrives.'; }
+    else if (cover <= lead + 7){ verdict='order this week'; tone='warn';
+      detail=cover.toFixed(1)+' days left, '+lead+' days to deliver. Cutting it fine.'; }
+    else { verdict='fine'; tone='ok'; detail=cover.toFixed(1)+' days of cover.'; }
+    return { code, onHand, daily, cover, lead, verdict, detail, tone };
+  });
+}
+
+/* what the jobs already accepted will consume — including the real reject rate,
+   because broken pavers eat cement too */
+function committedMaterials(){
+  const units = jobs.filter(j=>['accepted','scheduled','laying'].includes(j.status))
+                    .reduce((s,j)=>s + (+j.units||0), 0);
+  const code = 'SQ200';
+  const batches = units ? units / (unitsPerBatch(code) * Math.max(actualYield(code), 0.01)) : 0;
+  return Object.keys(STOCK_UNITS).map(m=>{
+    const needed = batches * perBatchUsage(m), onHand = materialOnHand(m);
+    return { code:m, needed, onHand, short: Math.max(needed - onHand, 0) };
+  });
+}
+
+function renderStockPage(){
+  if(!$('reorderRows')) return;
+  if(!$('d_mat').options.length){
+    $('d_mat').innerHTML = Object.keys(STOCK_UNITS)
+      .map(c=>`<option value="${c}">${MAT_NAMES[c]} (${STOCK_UNITS[c]})</option>`).join('');
+    $('d_date').value = today0();
+  }
+  const rr = reorderReport();
+  $('reorderRows').innerHTML = rr.map(r=>`
+    <div class="alert ${r.tone==='bad'?'a-warn':(r.tone==='warn'?'a-warn':'a-ok')}" style="margin-bottom:9px">
+      <b>${MAT_NAMES[r.code]}: ${r.verdict}</b> —
+      ${r.onHand.toFixed(1)} ${STOCK_UNITS[r.code]} on hand, using ${r.daily.toFixed(2)} a day.<br>
+      <span class="mini">${r.detail}${stockCfg[r.code].countedAt
+        ? ' Counted ' + stockCfg[r.code].countedAt + ', less everything poured since.'
+        : ''}</span></div>`).join('');
+
+  $('committedRows').innerHTML = committedMaterials().map(c=>`
+    <tr><td>${MAT_NAMES[c.code]}</td>
+      <td class="num">${c.needed.toFixed(1)} ${STOCK_UNITS[c.code]}</td>
+      <td class="num">${c.onHand.toFixed(1)}</td>
+      <td class="num" style="color:${c.short>0?'#a4342a':'inherit'};font-weight:${c.short>0?'700':'400'}">
+        ${c.short > 0 ? c.short.toFixed(1)+' — '+M(c.short*pricePerStockUnit(c.code))+' to buy' : '—'}</td></tr>`).join('');
+
+  const code = $('d_mat').value, qty = +$('d_qty').value, paid = +$('d_paid').value;
+  $('d_hint').innerHTML = (qty>0 && paid>0)
+    ? (function(){
+        const nu = paid/qty, ou = pricePerStockUnit(code);
+        const pct = ou ? (nu-ou)/ou*100 : 0;
+        return `That is <b>${M(nu)}</b> per ${STOCK_UNITS[code]}. You are currently pricing at ${M(ou)} — `
+          + (Math.abs(pct) < 0.5 ? 'no change.'
+             : `<b>${pct>0?'up':'down'} ${Math.abs(pct).toFixed(1)}%</b>. Booking this in re-prices every new quote`
+               + (pct>0 ? ' and flags the ones already out on the old price.' : '.'));
+      })()
+    : `Quantity in <b>${STOCK_UNITS[code]}</b>, and the total on the invoice.`;
+
+  $('deliveryRows').innerHTML = deliveries.length
+    ? `<table><thead><tr><th>Date</th><th>Material</th><th class="num">Qty</th><th class="num">Paid</th>
+        <th class="num">Per unit</th><th>Invoice</th><th></th></tr></thead><tbody>`
+      + deliveries.slice(0,10).map((d,i)=>`<tr><td>${d.date}</td><td>${MAT_NAMES[d.code]}</td>
+        <td class="num">${d.qty} ${STOCK_UNITS[d.code]}</td><td class="num">${M(d.paid)}</td>
+        <td class="num">${M(d.paid/(d.qty||1))}</td><td class="mini">${d.inv||''}</td>
+        <td><button class="btn dgr sm" onclick="delDelivery(${i})">×</button></td></tr>`).join('')
+      + '</tbody></table>'
+    : '<p class="mini">No deliveries booked in yet.</p>';
+
+  $('stockSetRows').innerHTML = Object.keys(STOCK_UNITS).map(c=>`
+    <div class="mat">
+      <div><b>${MAT_NAMES[c]}</b><div class="mini">held in ${STOCK_UNITS[c]}</div></div>
+      <div><label>Counted (${STOCK_UNITS[c]})</label>
+        <input type="number" step="0.5" value="${stockCfg[c].counted ?? stockCfg[c].opening}"
+               onchange="setCount('${c}', this.value)"></div>
+      <div><label>As at</label>
+        <input type="date" value="${stockCfg[c].countedAt || ''}"
+               onchange="stockCfg['${c}'].countedAt = this.value || null; saveStock()"></div>
+      <div><label>Lead time (days)</label>
+        <input type="number" min="0" step="1" value="${stockCfg[c].lead}"
+               onchange="stockCfg['${c}'].lead=+this.value||0; saveStock()"></div>
+    </div>`).join('');
+}
+
+/* A count resets the clock: pouring is only subtracted from the 'as at' date forward.
+   The date is set to today the first time, but stays editable — otherwise entering an
+   opening balance would silently discard every pour already logged before today. */
+function setCount(code, v){
+  stockCfg[code].counted = +v || 0;
+  if (!stockCfg[code].countedAt) stockCfg[code].countedAt = today0();
+  saveStock();
+}
+function saveStock(){ store.set('tms_stockcfg', stockCfg); renderStockPage(); }
+
+function logDelivery(){
+  const code=$('d_mat').value, qty=+$('d_qty').value, paid=+$('d_paid').value;
+  if(!(qty>0)){ alert('Enter how much was delivered.'); return; }
+  if(!(paid>=0)){ alert('Enter the total paid.'); return; }
+  const newUnit = paid/qty, oldUnit = pricePerStockUnit(code);
+  deliveries.unshift({date:$('d_date').value||today0(), code, qty, paid,
+                      inv:$('d_inv').value.trim(), by:$('d_by').value.trim()});
+  store.set('tms_deliveries', deliveries);
+  // the price actually paid becomes the price every new quote is built on
+  if (Math.abs(newUnit - oldUnit) > 0.005){
+    const k = setup.consts;
+    materials[code] = code==='SAND' ? newUnit * k.sandLoad
+                    : code==='PIGMENT' ? newUnit * k.pigBag
+                    : newUnit;
+    store.set(LS_MAT, materials);
+  }
+  $('d_qty').value=''; $('d_paid').value=''; $('d_inv').value='';
+  renderStockPage(); renderLines(); renderPriceList(); renderSaved();
+}
+function delDelivery(i){ deliveries.splice(i,1); store.set('tms_deliveries', deliveries); renderStockPage(); }
+
+['d_mat','d_qty','d_paid'].forEach(id=>{ const e=$(id); if(e){ e.addEventListener('input', renderStockPage);
+                                                               e.addEventListener('change', renderStockPage); } });
+
 function addOverhead(){
   const n=$('oh_name').value.trim(); if(!n){alert('Name the cost.');return;}
   setup.overheads.push({name:n, cat:$('oh_cat').value, amt:+$('oh_amt').value||0});
@@ -1438,7 +1672,7 @@ function resetSetup(){ setup=JSON.parse(JSON.stringify(SETUP_DEFAULTS)); store.s
   .forEach(id=>{const e=$(id); if(e) e.addEventListener('change',()=>saveSetup(true));});
 ['wk_prod','wk_markup'].forEach(id=>{const e=$(id); if(e){e.addEventListener('input',renderWorking);e.addEventListener('change',renderWorking);}});
 
-fillCrewGround(); renderCrews(); renderGround(); renderSetup(); renderTrade(); renderJobsPage();
+fillCrewGround(); renderCrews(); renderGround(); renderSetup(); renderTrade(); renderJobsPage(); renderStockPage();
 renderLines(); renderMaterials(); renderPriceList(); renderInstall(); renderInstallSettings();
 
 /* show whether we are on the shared database or this device only */
