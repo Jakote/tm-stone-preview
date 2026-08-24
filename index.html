@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>TM Stone Solutions — Wetcast Paving, Maseru</title>
+<meta name="robots" content="noindex,nofollow"><!-- private preview for TM Stone -->
+<meta name="description" content="TM Stone Solutions (Pty) Ltd — wetcast paving manufacture and installation in Maseru, Lesotho. SANS 1058:2021 compliant, 25 MPa.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect rx='16' width='100' height='100' fill='%23c2532a'/><text x='50' y='68' font-size='52' font-weight='bold' text-anchor='middle' fill='white' font-family='sans-serif'>TM</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --stone:#2b2725;--stone2:#3a3532;--sand:#f6f2ec;--sand2:#ece5db;--line:#ddd3c6;
+  --ink:#241f1c;--ink2:#615851;--ink3:#948a81;
+  --ac:#c2532a;--ac2:#e0703f;--ok:#3f8f52;--warn:#c98a17;
+  --r:10px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--sand);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{max-width:100%;display:block}
+.w{max-width:1140px;margin:0 auto;padding:0 clamp(16px,4vw,36px)}
+h1,h2,h3,.cond{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.01em}
+
+.bar{background:var(--ac);color:#fff;text-align:center;font-size:12px;padding:8px 14px;font-weight:500}
+.bar a{color:#fff;font-weight:700}
+
+nav{position:sticky;top:0;z-index:60;background:rgba(43,39,37,.97);backdrop-filter:blur(10px)}
+.nb{max-width:1140px;margin:0 auto;padding:0 clamp(16px,4vw,36px);height:60px;display:flex;align-items:center;justify-content:space-between}
+.lg{display:flex;align-items:center;gap:10px;text-decoration:none;color:#fff}
+.lg-m{width:36px;height:36px;border-radius:8px;background:var(--ac);display:grid;place-items:center;font-family:'Barlow Condensed';font-weight:700;font-size:17px}
+.lg b{font-family:'Barlow Condensed';font-size:19px;display:block;line-height:1}
+.lg span{font-size:10px;color:#b9aea5;letter-spacing:.16em}
+nav ul{display:flex;gap:2px;list-style:none;align-items:center}
+nav a.nl{color:#ddd3c6;text-decoration:none;font-size:13px;font-weight:500;padding:8px 13px;border-radius:7px}
+nav a.nl:hover{background:rgba(255,255,255,.08);color:#fff}
+.ncta{background:var(--ac);color:#fff!important;font-weight:700;padding:9px 18px;border-radius:7px;text-decoration:none;font-size:13px}
+.ncta:hover{background:var(--ac2)}
+.ham{display:none;background:none;border:none;color:#fff;font-size:23px;cursor:pointer}
+
+.hero{position:relative;min-height:74vh;display:grid;align-items:center;color:#fff;
+ background:linear-gradient(rgba(28,24,22,.62),rgba(28,24,22,.72)),url('assets/work-1.jpg') center/cover}
+.hero-in{padding:90px 0}
+.kick{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.2em;background:var(--ac);padding:6px 14px;border-radius:4px;margin-bottom:20px}
+.hero h1{font-size:clamp(36px,6.5vw,68px);font-weight:700;line-height:.98;margin-bottom:16px;max-width:16ch}
+.hero p{font-size:clamp(15px,1.6vw,18px);color:#e6ddd4;max-width:54ch;line-height:1.7;margin-bottom:28px}
+.hb{display:flex;gap:11px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 26px;border-radius:8px;font-weight:700;font-size:14.5px;text-decoration:none;border:none;cursor:pointer;font-family:'Inter';transition:.2s}
+.b1{background:var(--ac);color:#fff}.b1:hover{background:var(--ac2);transform:translateY(-2px)}
+.b2{color:#fff;border:1.5px solid rgba(255,255,255,.5)}.b2:hover{background:rgba(255,255,255,.12)}
+
+.specs{background:var(--stone);color:#e6ddd4;padding:20px 0}
+.specs-g{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;text-align:center}
+.specs .v{font-family:'Barlow Condensed';font-size:27px;font-weight:700;color:#fff;line-height:1}
+.specs .k{font-size:10.5px;color:#a2968c;letter-spacing:.11em;margin-top:5px;text-transform:uppercase}
+
+section{padding:clamp(56px,9vh,88px) 0}
+.lbl{font-size:11px;font-weight:700;letter-spacing:.2em;color:var(--ac);margin-bottom:10px}
+.tit{font-size:clamp(28px,4.2vw,44px);font-weight:700;line-height:1.05;margin-bottom:14px}
+.dsc{font-size:15px;color:var(--ink2);max-width:58ch;line-height:1.75}
+
+/* calculator */
+.calc-sec{background:var(--stone);color:#e9e1d8}
+.calc-sec .tit{color:#fff}.calc-sec .dsc{color:#b9aea5}
+.calc{display:grid;grid-template-columns:1fr 1.15fr;gap:16px;margin-top:34px;align-items:start}
+.pane{background:var(--stone2);border:1px solid #4a433f;border-radius:12px;padding:22px}
+.pane h3{font-size:19px;color:#fff;margin-bottom:4px}
+.pane .sub{font-size:12px;color:#9d9089;margin-bottom:18px}
+label{display:block;font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#a2968c;margin:14px 0 6px}
+input[type=number],select{width:100%;padding:11px 13px;border:1px solid #554d48;border-radius:8px;background:#241f1c;color:#fff;font-family:'Inter';font-size:15px;outline:none}
+input[type=number]:focus,select:focus{border-color:var(--ac)}
+input[type=range]{width:100%;accent-color:var(--ac);margin-top:6px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.out{background:#241f1c;border:1px solid #4a433f;border-radius:12px;padding:22px}
+.big{font-family:'Barlow Condensed';font-size:clamp(38px,6vw,58px);font-weight:700;color:var(--ac2);line-height:1}
+.big small{display:block;font-family:'Inter';font-size:12px;font-weight:500;color:#9d9089;text-transform:none;letter-spacing:0;margin-top:5px}
+.brk{margin-top:18px;border-top:1px solid #4a433f;padding-top:14px}
+.br{display:flex;justify-content:space-between;padding:7px 0;font-size:13.5px;color:#c9bfb6}
+.br b{color:#fff;font-weight:600}
+.br.tot{border-top:1px solid #4a433f;margin-top:8px;padding-top:11px;font-size:15px}
+.alert{margin-top:16px;background:rgba(201,138,23,.13);border:1px solid rgba(201,138,23,.4);border-radius:9px;padding:13px 15px;font-size:12.5px;line-height:1.6;color:#e8d5ae}
+.alert b{color:#f3d79a}
+.mini{font-size:11.5px;color:#8d8279;margin-top:12px;line-height:1.6}
+
+/* gallery */
+.gal{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:210px;gap:11px;margin-top:32px}
+.gp{border-radius:10px;overflow:hidden;background:var(--sand2)}
+.gp img{width:100%;height:100%;object-fit:cover;transition:.45s}
+.gp:hover img{transform:scale(1.05)}
+.gp.wide{grid-column:span 2}
+
+/* services */
+.svc{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:32px}
+.sc{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:24px}
+.sc h3{font-size:19px;margin-bottom:8px;color:var(--ac)}
+.sc p{font-size:13.5px;color:var(--ink2);line-height:1.7}
+
+.cta{background:var(--ac);color:#fff;border-radius:14px;padding:clamp(28px,5vw,46px);display:grid;grid-template-columns:1.3fr auto;gap:26px;align-items:center;margin-bottom:40px}
+.cta h2{font-size:clamp(24px,3.4vw,34px);margin-bottom:8px}
+.cta p{font-size:14px;color:#ffe2d6;line-height:1.7}
+.cta .b1{background:#fff;color:var(--ac)}
+.cta .b1:hover{background:#ffeee7}
+
+footer{background:var(--stone);color:#9d9089;padding:34px 0;font-size:12.5px;text-align:center}
+footer a{color:#e0703f;text-decoration:none;font-weight:600}
+footer .r{margin-top:8px;font-size:11.5px;color:#6f665f}
+
+@media(max-width:900px){.calc{grid-template-columns:1fr}.specs-g{grid-template-columns:1fr 1fr}.svc,.gal{grid-template-columns:1fr 1fr}.gp.wide{grid-column:span 2}.cta{grid-template-columns:1fr}}
+@media(max-width:600px){nav ul{display:none;position:fixed;top:60px;left:0;right:0;background:var(--stone);flex-direction:column;padding:14px;align-items:stretch;text-align:center}nav ul.open{display:flex}.ham{display:block}.svc,.gal{grid-template-columns:1fr}.row2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="bar">Private preview built for TM Stone by <a href="https://mendgroup.co.za">MEND GROUP</a> — the quote calculator below runs on your real cost figures</div>
+
+<nav><div class="nb">
+  <a href="#" class="lg"><div class="lg-m">TM</div><div><b>TM Stone</b><span>SOLUTIONS (PTY) LTD</span></div></a>
+  <ul id="nm">
+    <li><a class="nl" href="#work">Our Work</a></li>
+    <li><a class="nl" href="#services">Services</a></li>
+    <li><a class="nl" href="#calc">Instant Quote</a></li>
+    <li><a class="ncta" href="#contact">Get a Quote</a></li>
+  </ul>
+  <button class="ham" onclick="document.getElementById('nm').classList.toggle('open')">☰</button>
+</div></nav>
+
+<header class="hero"><div class="w hero-in">
+  <div class="kick">MASERU · LESOTHO</div>
+  <h1>Paving that holds up</h1>
+  <p>We manufacture our own wetcast pavers and lay them ourselves — from a single driveway to a commercial forecourt. Made to SANS 1058:2021, minimum 25 MPa, ±2 mm tolerance.</p>
+  <div class="hb">
+    <a href="#calc" class="btn b1">Price my paving →</a>
+    <a href="#work" class="btn b2">See our work</a>
+  </div>
+</div></header>
+
+<div class="specs"><div class="w specs-g">
+  <div><div class="v">25 MPa</div><div class="k">Min compressive strength</div></div>
+  <div><div class="v">±2 mm</div><div class="k">Tolerance on 200×200</div></div>
+  <div><div class="v">SANS 1058</div><div class="k">2021 compliant</div></div>
+  <div><div class="v">40+</div><div class="k">Projects completed</div></div>
+</div></div>
+
+<!-- ============ CALCULATOR ============ -->
+<section id="calc" class="calc-sec"><div class="w">
+  <div class="lbl" style="color:var(--ac2)">Instant Quote</div>
+  <h2 class="tit">Know the price before you phone anyone</h2>
+  <p class="dsc">Enter your area and we price it in real time — off the same cost model TM Stone uses in the yard. Change the cement price and watch every number move.</p>
+
+  <div class="calc">
+    <div class="pane">
+      <h3>Your job</h3>
+      <div class="sub" style="font-size:12px;color:#9d9089;margin-bottom:16px">All figures in Maloti (M)</div>
+
+      <label>Area to pave (m²)</label>
+      <input type="number" id="area" value="120" min="1" step="1">
+
+      <label>Paver</label>
+      <select id="ptype">
+        <option value="SQ200" data-l="2.0">200 × 200 × 50 mm Square</option>
+        <option value="SQ100" data-l="0.5">100 × 100 × 50 mm Square</option>
+        <option value="BR220" data-l="1.21">220 × 110 × 50 mm Brick / Bevel</option>
+        <option value="HEX200" data-l="1.30">Hexagon 200 × 50 mm</option>
+      </select>
+
+      <div class="row2">
+        <div>
+          <label>Cement (M / 50 kg bag)</label>
+          <input type="number" id="cement" value="130" min="50" step="5">
+        </div>
+        <div>
+          <label>Pigment (M / 25 kg)</label>
+          <input type="number" id="pigment" value="1600" min="0" step="50">
+        </div>
+      </div>
+
+      <label>Mark-up on cost — <span id="mlbl">40%</span></label>
+      <input type="range" id="margin" min="20" max="60" value="40" step="1">
+
+      <div class="mini">Sand M2 800 / 12 m³ and stone M434.26 / ton are held at your current supply rates. Overhead M1.0341 and mould depreciation M0.1200 per unit come from your SQ200 batch model.</div>
+    </div>
+
+    <div class="out">
+      <div class="big" id="total">M —<small id="persqm">— per m²</small></div>
+
+      <div class="brk">
+        <div class="br"><span>Pavers required</span><b id="units">—</b></div>
+        <div class="br"><span>Material per paver</span><b id="matp">—</b></div>
+        <div class="br"><span>Overhead per paver</span><b id="ohp">—</b></div>
+        <div class="br"><span>Mould depreciation</span><b id="mdp">—</b></div>
+        <div class="br tot"><span>Cost per paver</span><b id="costp">—</b></div>
+        <div class="br tot"><span>Selling price per paver</span><b id="sellp">—</b></div>
+        <div class="br"><span>Gross profit on this job</span><b id="profit" style="color:#7cc48d">—</b></div>
+      </div>
+
+      <div class="alert" id="alert"></div>
+      <div class="mini">Indicative manufacture price. Installation, base preparation, edging and transport are quoted per site after a measure-up.</div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ WORK ============ -->
+<section id="work"><div class="w">
+  <div class="lbl">Our Work</div>
+  <h2 class="tit">Driveways, forecourts, car parks</h2>
+  <p class="dsc">Residential driveways with pattern work, retail forecourts and commercial parking — laid and finished by our own crews.</p>
+  <div class="gal">
+    <div class="gp wide"><img src="assets/work-2.jpg" alt="Paved driveway with pattern detail" loading="lazy"></div>
+    <div class="gp"><img src="assets/work-3.jpg" alt="Completed paving project" loading="lazy"></div>
+    <div class="gp"><img src="assets/work-4.jpg" alt="Commercial paving installation" loading="lazy"></div>
+    <div class="gp wide"><img src="assets/work-5.jpg" alt="Retail forecourt paving" loading="lazy"></div>
+    <div class="gp"><img src="assets/work-6.jpg" alt="Paving detail" loading="lazy"></div>
+    <div class="gp"><img src="assets/work-7.jpg" alt="Commercial car park paving" loading="lazy"></div>
+    <div class="gp"><img src="assets/work-1.jpg" alt="Hexagonal paver driveway" loading="lazy"></div>
+  </div>
+</div></section>
+
+<!-- ============ SERVICES ============ -->
+<section id="services" style="background:var(--sand2)"><div class="w">
+  <div class="lbl">What We Do</div>
+  <h2 class="tit">We make them and we lay them</h2>
+  <p class="dsc">Most people do one or the other. Because we manufacture our own pavers, you deal with one company from the batch to the broom finish — and the price doesn't carry a middleman.</p>
+  <div class="svc">
+    <div class="sc"><h3>Manufacture</h3><p>Wetcast pavers produced in our own yard to SANS 1058:2021 and SANS 1200MJ — minimum 25 MPa, ±2 mm tolerance, quarterly testing and a zero-defect policy on every batch.</p></div>
+    <div class="sc"><h3>Installation</h3><p>Base preparation, edge restraints, laying, cutting and compaction by our own crews. Residential driveways through to commercial car parks with marked bays.</p></div>
+    <div class="sc"><h3>Supply to trade</h3><p>Contractors and developers buy direct from the yard. Consistent batches, predictable lead times, and volume pricing that holds through the job.</p></div>
+  </div>
+</div></section>
+
+<section><div class="w"><div class="cta">
+  <div>
+    <h2>Send us your measurements</h2>
+    <p>Tell us the area and where you are. We'll come and measure, and you'll have a written quote — not a guess over the phone.</p>
+  </div>
+  <div><a href="#contact" class="btn b1">Request a site visit</a></div>
+</div></div></section>
+
+<footer id="contact"><div class="w">
+  <strong style="color:#e6ddd4;font-size:15px">TM STONE SOLUTIONS (PTY) LTD</strong><br>
+  Matala, Ha Matala Tlasa Lekhotleng · Maseru, Lesotho<br>
+  Reg. A2026/34518
+  <div class="r">Private preview built by <a href="https://mendgroup.co.za">MEND GROUP (PTY) LTD</a> · contact details and enquiry form to be added on approval</div>
+</div></footer>
+
+<script>
+// ---- TM Stone's real cost model (from paver_cost_analysis) ----
+// Batch: 2.75 bags cement + 220L sand + 220L stone + 2.75kg pigment
+// Verified: SQ200 -> 216 pavers/batch, material M3.4152/paver  (737.69/216 = 3.4152 ✓)
+const BATCH = { cementBags:2.75, sandL:220, stoneL:220, pigmentKg:2.75, yieldL:432 };
+const SAND_PER_12M3 = 2800, STONE_PER_TON = 434.26;
+const OVERHEAD = 1.0341, MOULD = 0.1200;      // per paver, from their SQ200 model
+const BASE_CEMENT = 130, BASE_PIGMENT = 1600; // their current input prices
+
+const $ = id => document.getElementById(id);
+const M = n => 'M' + n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+function batchCost(cementPrice, pigmentPrice){
+  const cement  = BATCH.cementBags * cementPrice;
+  const sand    = (BATCH.sandL/1000) / 12 * SAND_PER_12M3;      // 220L of a 12m³ load
+  const stone   = (BATCH.stoneL/1000) * 1.6 * STONE_PER_TON;    // ~1.6 t/m³
+  const pigment = (BATCH.pigmentKg/25) * pigmentPrice;
+  return cement + sand + stone + pigment;
+}
+
+function calc(){
+  const area   = Math.max(1, +$('area').value || 0);
+  const opt    = $('ptype').selectedOptions[0];
+  const litres = +opt.dataset.l;
+  const margin = +$('margin').value;
+  const cementP  = +$('cement').value  || BASE_CEMENT;
+  const pigmentP = +$('pigment').value || BASE_PIGMENT;
+
+  const perBatch = BATCH.yieldL / litres;              // pavers from one batch
+  const matPer   = batchCost(cementP, pigmentP) / perBatch;
+  const costPer  = matPer + OVERHEAD + MOULD;
+  const sellPer  = costPer * (1 + margin/100);   // mark-up on cost — matches their published M6.3971 @40%
+
+  // pavers per m² from the face dimensions encoded in the label
+  const face = { SQ200:0.04, SQ100:0.01, BR220:0.0242, HEX200:0.026 }[opt.value];
+  const units = Math.ceil(area / face);
+  const total = units * sellPer;
+
+  $('mlbl').textContent = margin + '%';
+  $('units').textContent = units.toLocaleString('en-US') + ' pavers';
+  $('matp').textContent  = M(matPer);
+  $('ohp').textContent   = M(OVERHEAD);
+  $('mdp').textContent   = M(MOULD);
+  $('costp').textContent = M(costPer);
+  $('sellp').textContent = M(sellPer);
+  $('total').firstChild.textContent = M(total);
+  $('persqm').textContent = M(total/area) + ' per m² · ' + margin + '% mark-up';
+  $('profit').textContent = M(total - units*costPer);
+
+  // the CRITICAL risk from their own financial matrix, made visible
+  const baseCost = batchCost(BASE_CEMENT, BASE_PIGMENT)/perBatch + OVERHEAD + MOULD;
+  const drift = ((costPer - baseCost)/baseCost)*100;
+  const a = $('alert');
+  if (Math.abs(drift) < 0.05){
+    a.innerHTML = '<b>Input prices at your current rates.</b> Move the cement price above and every quote on this page re-prices instantly — that is the difference between quoting today\'s cost and last month\'s.';
+  } else if (drift > 0){
+    a.innerHTML = '<b>⚠ Cost up ' + drift.toFixed(1) + '% on your baseline.</b> Any quote still out at the old price is losing you ' +
+      M((costPer-baseCost)*units) + ' on a job this size. This is the raw-material volatility your own risk matrix rates <b>Critical</b>.';
+  } else {
+    a.innerHTML = '<b>Cost down ' + Math.abs(drift).toFixed(1) + '% on your baseline.</b> Room to sharpen a quote and still hold ' + margin + '% mark-up — or bank the extra ' + M((baseCost-costPer)*units) + ' on a job this size.';
+  }
+}
+['area','ptype','margin','cement','pigment'].forEach(id=>{
+  $(id).addEventListener('input', calc); $(id).addEventListener('change', calc);
+});
+calc();
+</script>
+</body>
+</html>
