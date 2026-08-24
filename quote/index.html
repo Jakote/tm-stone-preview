@@ -291,6 +291,21 @@ tr:last-child td{border-bottom:none}
     <table><thead><tr><th>Component</th><th class="num">Per paver</th><th>How it is worked out</th></tr></thead>
       <tbody id="wkRows"></tbody></table>
   </div>
+
+  <div class="card" id="shareCard">
+    <h2>Send these numbers to Jakote</h2>
+    <div class="sub" id="shareWhere"></div>
+    <div id="sharePreview"></div>
+    <div style="margin-top:14px;display:flex;gap:9px;flex-wrap:wrap">
+      <button class="btn" onclick="shareNumbers()">Send my numbers on WhatsApp</button>
+      <button class="btn ghost" onclick="backupSetup()">Save a backup file</button>
+      <label class="btn ghost" style="cursor:pointer;margin:0">Load a backup
+        <input type="file" accept="application/json" style="display:none" onchange="restoreSetup(event)">
+      </label>
+    </div>
+    <p class="mini" style="margin-top:10px">Nothing is sent automatically. The button opens WhatsApp
+      with the message written out — you read it and press send yourself.</p>
+  </div>
 </div>
 
 <div class="page" id="p-trade">
@@ -987,7 +1002,7 @@ function renderSetup(){
       <div class="mini" style="padding-bottom:12px">${M(m.cost/(m.pours||1))} per paver</div>
     </div>`;
   }).join('') : `<p class="mini">No moulds captured — still using <b>${M(setup.sheet.mould)}</b> per paver from your cost sheet. Add a mould and the real wear takes over.</p>`;
-  renderWorking();
+  renderWorking(); renderShare();
 }
 
 function renderWorking(){
@@ -1011,6 +1026,106 @@ function renderWorking(){
     + `<tr style="background:#f7f4ef"><td><b>Cost per paver</b></td><td class="num"><b>${M(cost)}</b></td><td class="mini">sum of the above</td></tr>`
     + `<tr style="background:#fdf6f2"><td><b>Selling price</b></td><td class="num"><b>${M(cost*(1+mk/100))}</b></td><td class="mini">cost × ${(1+mk/100).toFixed(2)} — a ${mk}% mark-up</td></tr>`
     + `<tr><td><b>Per m²</b></td><td class="num"><b>${M(cost*(1+mk/100)/prod.face)}</b></td><td class="mini">${(1/prod.face).toFixed(0)} pavers cover 1 m²</td></tr>`;
+}
+
+
+/* ============ closing the loop ============
+   The app runs in LOCAL mode until a Supabase project exists, which means what he
+   captures lives in localStorage on HIS phone: Jakote cannot see it, and it dies if
+   he clears his browser. Until the cloud is wired, he sends it himself and can keep
+   a file copy. No accounts, no backend, no cost. */
+const JAKOTE_WA = '27832092120';
+
+function setupIsEmpty(){ return ohTotal() <= 0 && !setup.moulds.length; }
+
+function numbersSummary(){
+  const p = PRODUCTS.find(x=>x.code==='SQ200') || PRODUCTS[0];
+  const d = new Date();
+  const when = d.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getFullYear();
+  const L = [];
+  L.push('TM STONE — my numbers ('+when+')','');
+  L.push('MONTHLY RUNNING COSTS');
+  const items = setup.overheads.filter(o=>+o.amt>0);
+  if (items.length){ items.forEach(o=>L.push('• '+o.name+': '+M(o.amt)));
+                     L.push('Total: '+M(ohTotal())); }
+  else L.push('• (not captured yet)');
+  L.push('','PRODUCTION');
+  L.push('• Working days a month: '+setup.cap.days);
+  L.push('• Batches a day: '+setup.cap.batches);
+  L.push('• Batch yield: '+setup.cap.yield+' L');
+  L.push('= about '+Math.round(unitsPM(p)).toLocaleString('en-US')+' '+p.code+' pavers a month');
+  L.push('','BATCH RECIPE');
+  L.push('• '+setup.recipe.cement+' bags cement, '+setup.recipe.sand+' L sand, '
+         +setup.recipe.stone+' L stone, '+setup.recipe.pigment+' kg pigment');
+  L.push('','MOULDS');
+  if (setup.moulds.length) setup.moulds.forEach(m=>{
+    const pr = PRODUCTS.find(x=>x.code===m.product);
+    L.push('• '+(pr?pr.name:m.product)+': '+M(m.cost)+' over '+(+m.pours).toLocaleString('en-US')
+           +' pours = '+M(m.cost/(m.pours||1))+' a paver');
+  }); else L.push('• (not captured yet)');
+  L.push('','MATERIAL PRICES I AM PAYING');
+  L.push('• Cement '+M(materials.CEMENT)+'/bag · Sand '+M(materials.SAND)+'/load · Stone '
+         +M(materials.STONE)+'/t · Pigment '+M(materials.PIGMENT)+'/bag');
+  if (typeof crews !== 'undefined' && crews && crews.length){
+    L.push('','LAYING CREWS');
+    crews.forEach(c=>L.push('• '+c.name+': '+c.size+' men, '+M(c.rate)+' each a day, '+c.speed+' m² a day on normal ground'));
+  }
+  const c = unitCostingD(p, materials, 40);
+  L.push('','WHAT THIS MAKES ('+p.code+' at 40% mark-up)');
+  L.push('• Cost '+M(c.cost)+' a paver · Sell '+M(c.price)+' · '+M(c.perM2)+' per m²');
+  L.push('','Sent from the TM Stone quote builder.');
+  return L.join('\n');
+}
+
+function renderShare(){
+  const where = $('shareWhere'); if (!where) return;
+  const cloud = (window.TMS && TMS.mode === 'cloud');
+  where.innerHTML = cloud
+    ? 'Your numbers are saved to your TM Stone account — Jakote can see them and does not need this.'
+    : '<b>Right now these numbers are saved on this phone only.</b> Nobody else can see them, and '
+      + 'they are lost if you clear your browser or change phone. Send them across so they are '
+      + 'safe and so the system can be set up properly for your yard.';
+  const pv = $('sharePreview');
+  pv.innerHTML = setupIsEmpty()
+    ? '<div class="alert a-warn" style="margin-top:12px">Nothing captured yet — fill in your monthly '
+      + 'running costs and at least one mould above, then send.</div>'
+    : '<pre style="margin-top:12px;background:#faf8f4;border:1px solid #eee7dd;border-radius:8px;'
+      + 'padding:12px;font-size:12.5px;white-space:pre-wrap;overflow-x:auto">'
+      + numbersSummary().replace(/[<>&]/g, ch=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[ch])) + '</pre>';
+}
+
+function shareNumbers(){
+  if (setupIsEmpty()){ alert('Fill in your monthly running costs first — there is nothing to send yet.'); return; }
+  window.open('https://wa.me/'+JAKOTE_WA+'?text='+encodeURIComponent(numbersSummary()), '_blank');
+}
+
+function backupSetup(){
+  const blob = new Blob([JSON.stringify({saved:new Date().toISOString(), setup, materials}, null, 2)],
+                        {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'tm-stone-numbers-' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+function restoreSetup(evt){
+  const f = evt.target.files && evt.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const d = JSON.parse(r.result);
+      if (!d.setup || !d.setup.cap) throw new Error('not a TM Stone backup');
+      setup = d.setup;
+      if (!setup.sheet) setup.sheet = { overhead:1.0341, mould:0.1200 };
+      if (d.materials) { Object.assign(materials, d.materials); store.set(LS_MAT, materials); }
+      store.set('tms_setup', setup);
+      renderSetup(); renderLines(); renderPriceList();
+      alert('Loaded. Every price now uses the numbers from that file.');
+    } catch (e) { alert('That file could not be read as a TM Stone backup.'); }
+    evt.target.value = '';
+  };
+  r.readAsText(f);
 }
 
 function addOverhead(){
