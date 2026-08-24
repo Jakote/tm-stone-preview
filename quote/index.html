@@ -98,6 +98,7 @@ tr:last-child td{border-bottom:none}
     <button class="tab" data-p="saved">Saved Quotes</button>
     <button class="tab" data-p="jobs">Jobs &amp; Yard</button>
     <button class="tab" data-p="stock">Stock</button>
+    <button class="tab" data-p="money">Money</button>
     <button class="tab" data-p="setup">My Costs</button>
     <button class="tab" data-p="trade">Trade Supply</button>
     <button class="tab" data-p="materials">Prices &amp; Rates</button>
@@ -308,6 +309,71 @@ tr:last-child td{border-bottom:none}
     <div class="sub">Set this once. After that the system keeps count for you — only correct it
       if you do a physical count and it disagrees.</div>
     <div id="stockSetRows"></div>
+  </div>
+
+</div>
+
+
+<div class="page" id="p-money">
+
+  <div id="invWarn"></div>
+
+  <div class="card">
+    <h2>Where your money is</h2>
+    <div class="sub">Invoiced, collected, and what is still out there.</div>
+    <div class="tot" id="cashTot"></div>
+    <table style="margin-top:14px"><thead><tr><th>How old</th><th class="num">Invoices</th>
+      <th class="num">Owed</th></tr></thead><tbody id="agingRows"></tbody></table>
+  </div>
+
+  <div class="card">
+    <h2>Work you finished and never invoiced</h2>
+    <div class="sub">For a business this size this is the most common way money is simply lost.</div>
+    <div id="leakRows"></div>
+  </div>
+
+  <div class="card">
+    <h2>Raise an invoice</h2>
+    <div class="g4">
+      <div><label>For which job</label><select id="i_job"></select></div>
+      <div><label>Type</label><select id="i_kind">
+        <option value="final">Final — the whole job</option>
+        <option value="deposit">Deposit before starting</option>
+        <option value="progress">Progress payment</option></select></div>
+      <div><label>Percent of the job</label><input type="number" id="i_pct" value="100" min="1" max="100" step="5"></div>
+      <div><label>Payment terms (days)</label><input type="number" id="i_terms" min="0" step="1"></div>
+    </div>
+    <p class="mini" id="i_hint" style="margin-top:9px"></p>
+    <div style="margin-top:11px"><button class="btn" onclick="raiseInvoice()">Raise it</button></div>
+  </div>
+
+  <div class="card">
+    <h2>Invoices</h2>
+    <div id="invRows"></div>
+  </div>
+
+  <div class="card">
+    <h2>Your invoice details</h2>
+    <div class="sub">These print on every invoice. Nothing here is guessed — fill in what is true
+      for TM Stone.</div>
+    <div class="g3">
+      <div><label>VAT registered?</label><select id="s_vatreg">
+        <option value="no">No — do not show VAT</option>
+        <option value="yes">Yes — add VAT</option></select></div>
+      <div><label>VAT number</label><input id="s_vatno" placeholder="only if registered"></div>
+      <div><label>VAT rate %</label><input type="number" id="s_vatrate" step="0.5"></div>
+    </div>
+    <div class="g4" style="margin-top:10px">
+      <div><label>Bank</label><input id="s_bank"></div>
+      <div><label>Account name</label><input id="s_accname"></div>
+      <div><label>Account number</label><input id="s_accno"></div>
+      <div><label>Branch code</label><input id="s_branch"></div>
+    </div>
+    <div class="g3" style="margin-top:10px">
+      <div><label>Standard terms (days)</label><input type="number" id="s_terms" min="0"></div>
+      <div><label>Deposit %</label><input type="number" id="s_dep" min="0" max="100"></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn" onclick="saveInvSettings()">Save</button></div>
+    </div>
   </div>
 
 </div>
@@ -577,6 +643,7 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   if(t.dataset.p==='setup'){ renderSetup(); }
   if(t.dataset.p==='jobs'){ renderJobsPage(); }
   if(t.dataset.p==='stock'){ renderStockPage(); }
+  if(t.dataset.p==='money'){ renderMoney(); }
 });
 
 /* ---------- quote lines ---------- */
@@ -1649,6 +1716,219 @@ function delDelivery(i){ deliveries.splice(i,1); store.set('tms_deliveries', del
 ['d_mat','d_qty','d_paid'].forEach(id=>{ const e=$(id); if(e){ e.addEventListener('input', renderStockPage);
                                                                e.addEventListener('change', renderStockPage); } });
 
+
+/* ============ MODULE 4 — invoicing and payments ============
+   Modules 1-3 make sure the work is priced right, delivered on time and made from
+   material that is in the yard. None of it matters if the money never arrives.
+
+   ⚠️ VAT status, bank details and terms are NOT known. They start blank and every
+   invoice carries a warning until Thulo fills them in. Showing VAT when he is not
+   registered — or hiding it when he is — is a legal problem, not a display bug.
+   Mirrors erp/db/008_invoicing_payments.sql. */
+const INV_DEFAULTS = () => ({
+  terms:30, depositPct:50,
+  vatRegistered:false, vatNo:'', vatRate:15,
+  bank:'', accName:'', accNo:'', branch:'',
+  prefix:'TMS-INV-', confirmed:false
+});
+let invCfg   = store.get('tms_invcfg', null) || INV_DEFAULTS();
+let invoices = store.get('tms_invoices', []);
+
+/* Money is rounded to the cent at every boundary. Without this, a fully-paid invoice
+   reads "-0.00" and the outstanding total lands a cent away from the overdue total. */
+const cents      = n => Math.round((+n||0) * 100) / 100;
+const invPaid    = inv => cents((inv.payments||[]).reduce((s,p)=>s + (+p.amount||0), 0));
+const invBalance = inv => { const b = cents((+inv.total||0) - invPaid(inv));
+                            return Math.abs(b) < 0.005 ? 0 : b; };
+const invStatus  = inv => {
+  if (inv.written_off) return 'written off';
+  const bal = invBalance(inv);
+  if (bal <= 0) return 'paid';
+  if (invPaid(inv) > 0) return 'part paid';
+  return inv.sent ? 'sent' : 'draft';
+};
+const daysOverdue = inv => daysBetween(inv.due, today0());
+
+function invSettingsIncomplete(){
+  const missing = [];
+  if (!invCfg.confirmed)       missing.push('VAT status not confirmed');
+  if (!invCfg.bank || !invCfg.accNo) missing.push('bank details missing');
+  if (invCfg.vatRegistered && !invCfg.vatNo) missing.push('VAT number missing');
+  return missing;
+}
+
+function cashSummary(){
+  const live = invoices.filter(i=>!i.written_off);
+  const invoiced   = live.reduce((s,i)=>s + (+i.total||0), 0);
+  const collected  = live.reduce((s,i)=>s + invPaid(i), 0);
+  const outstanding= cents(live.filter(i=>i.sent && invBalance(i) > 0)
+                               .reduce((s,i)=>s + invBalance(i), 0));
+  const overdue    = cents(live.filter(i=>i.sent && invBalance(i) > 0 && daysOverdue(i) > 0)
+                               .reduce((s,i)=>s + invBalance(i), 0));
+  return { invoiced: cents(invoiced), collected: cents(collected), outstanding, overdue };
+}
+
+function agingReport(){
+  const buckets = [['Not yet due',i=>daysOverdue(i) <= 0],
+                   ['1–30 days',  i=>daysOverdue(i) >= 1  && daysOverdue(i) <= 30],
+                   ['31–60 days', i=>daysOverdue(i) >= 31 && daysOverdue(i) <= 60],
+                   ['61–90 days', i=>daysOverdue(i) >= 61 && daysOverdue(i) <= 90],
+                   ['Over 90 days',i=>daysOverdue(i) > 90]];
+  const open = invoices.filter(i=>!i.written_off && i.sent && invBalance(i) > 0);
+  return buckets.map(([name,f])=>{
+    const rows = open.filter(f);
+    return { name, count: rows.length, amount: cents(rows.reduce((s,i)=>s + invBalance(i), 0)) };
+  });
+}
+
+/* Finished jobs with no invoice against them. */
+const uninvoicedWork = () => jobs.filter(j=>j.status==='complete' && !invoices.some(i=>i.job_no===j.job_no));
+
+function jobValue(j){
+  const q = quotes.find(x=>x.quote_no===j.quote_no);
+  return q ? +q.total : 0;
+}
+
+function renderMoney(){
+  if(!$('cashTot')) return;
+  fillInvSettings();
+
+  const missing = invSettingsIncomplete();
+  $('invWarn').innerHTML = missing.length
+    ? `<div class="alert a-warn" style="margin-bottom:14px">
+         <b>Do not send an invoice yet — ${missing.join(', ')}.</b><br>
+         <span class="mini">Fill in "Your invoice details" at the bottom of this page. VAT in
+         particular: showing it when TM Stone is not registered, or leaving it off when it is,
+         is a tax problem. Nothing here has been assumed for you.</span></div>`
+    : '';
+
+  const c = cashSummary();
+  $('cashTot').innerHTML = `
+    <div><div class="lbl">Invoiced</div><div class="big">${M(c.invoiced)}</div>
+      <div class="brk">${invoices.filter(i=>!i.written_off).length} invoice(s)</div></div>
+    <div><div class="lbl">Still owed to you</div><div class="big">${M(c.outstanding)}</div>
+      <div class="brk">${c.overdue > 0.005
+        ? '<b style="color:#ffb4a8">'+M(c.overdue)+' of it is overdue</b>'
+        : 'nothing overdue'} · collected ${M(c.collected)}</div></div>`;
+
+  $('agingRows').innerHTML = agingReport().map(b=>`
+    <tr><td>${b.name}</td><td class="num">${b.count}</td>
+      <td class="num" style="${b.name!=='Not yet due'&&b.amount>0.005?'color:#a4342a;font-weight:700':''}">
+        ${M(b.amount)}</td></tr>`).join('');
+
+  const leak = uninvoicedWork();
+  $('leakRows').innerHTML = leak.length
+    ? `<div class="alert a-warn"><b>${leak.length} finished job${leak.length>1?'s have':' has'} no invoice —
+         ${M(leak.reduce((s,j)=>s + jobValue(j), 0))} you have done the work for and not asked for.</b><br>`
+      + leak.map(j=>`${j.job_no} — ${j.customer}, ${M(jobValue(j))}`).join('<br>') + '</div>'
+    : '<p class="mini">Nothing finished is sitting uninvoiced.</p>';
+
+  const open = jobs.filter(j=>!['lost'].includes(j.status));
+  $('i_job').innerHTML = open.length
+    ? open.map(j=>`<option value="${j.job_no}">${j.job_no} — ${j.customer} (${M(jobValue(j))})</option>`).join('')
+    : '<option value="">— no jobs yet —</option>';
+  if (!$('i_terms').value) $('i_terms').value = invCfg.terms;
+  renderInvHint();
+  renderInvList();
+}
+
+function renderInvHint(){
+  const j = jobs.find(x=>x.job_no===$('i_job').value);
+  if (!j){ $('i_hint').textContent = 'Create a job first — an invoice is raised against a job.'; return; }
+  const pct = Math.min(Math.max(+$('i_pct').value||100, 1), 100);
+  const sub = jobValue(j) * pct/100;
+  const vat = invCfg.vatRegistered ? sub * invCfg.vatRate/100 : 0;
+  $('i_hint').innerHTML = `${pct}% of ${j.job_no} = <b>${M(sub)}</b>`
+    + (invCfg.vatRegistered ? ` + VAT ${M(vat)} = <b>${M(sub+vat)}</b>` : ' — no VAT added')
+    + `, due in ${+$('i_terms').value||invCfg.terms} days.`;
+}
+
+function raiseInvoice(){
+  const j = jobs.find(x=>x.job_no===$('i_job').value);
+  if (!j){ alert('Create a job first.'); return; }
+  const pct = Math.min(Math.max(+$('i_pct').value||100, 1), 100);
+  const sub = jobValue(j) * pct/100;
+  if (!(sub > 0)){ alert('That job has no value on its quote.'); return; }
+  const vat = invCfg.vatRegistered ? sub * invCfg.vatRate/100 : 0;
+  const terms = +$('i_terms').value || invCfg.terms;
+  const due = new Date(Date.now() + terms*86400000).toISOString().slice(0,10);
+  invoices.unshift({
+    invoice_no: invCfg.prefix + String(invoices.length+1).padStart(4,'0'),
+    job_no: j.job_no, customer: j.customer, site: j.site || '',
+    kind: $('i_kind').value, pct, issued: today0(), due,
+    subtotal: sub, vat, total: sub + vat,
+    vat_shown: invCfg.vatRegistered, sent: false, payments: []
+  });
+  store.set('tms_invoices', invoices);
+  renderMoney();
+}
+
+function markSent(i){ invoices[i].sent = true; store.set('tms_invoices', invoices); renderMoney(); }
+function delInvoice(i){ if(confirm('Delete this invoice?')){ invoices.splice(i,1); store.set('tms_invoices', invoices); renderMoney(); } }
+function addPayment(i){
+  const inv = invoices[i], bal = invBalance(inv);
+  const raw = prompt(`Payment received for ${inv.invoice_no}.\nBalance is ${M(bal)}. How much?`, bal.toFixed(2));
+  if (raw === null) return;
+  const amt = +raw;
+  if (!(amt > 0)){ alert('Enter an amount greater than zero.'); return; }
+  if (amt > bal && !confirm(`That is ${M(amt-bal)} more than is owed. Record it anyway?`)) return;
+  inv.payments.push({ date: today0(), amount: amt, ref: prompt('Reference (optional)', '') || '' });
+  store.set('tms_invoices', invoices);
+  renderMoney();
+}
+
+function renderInvList(){
+  if (!invoices.length){ $('invRows').innerHTML = '<p class="mini">No invoices yet.</p>'; return; }
+  $('invRows').innerHTML = invoices.map((inv,i)=>{
+    const st = invStatus(inv), bal = invBalance(inv);
+    const late = inv.sent && bal > 0 && daysOverdue(inv) > 0;
+    return `<div class="mat" style="grid-template-columns:1fr;gap:8px">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:baseline">
+        <div><b>${inv.invoice_no} — ${inv.customer}</b>
+          <div class="mini">${inv.kind}${inv.pct<100?' ('+inv.pct+'%)':''} · ${inv.job_no}
+            · issued ${inv.issued} · due ${inv.due}
+            ${late ? '· <b style="color:#a4342a">'+daysOverdue(inv)+' days overdue</b>' : ''}</div></div>
+        <div style="text-align:right"><b>${M(inv.total)}</b>
+          <div class="mini">${bal > 0.005 ? M(bal)+' outstanding' : 'paid in full'} · ${st}</div></div>
+      </div>
+      ${inv.vat_shown ? '' : '<div class="mini">No VAT on this invoice.</div>'}
+      <div class="noprint" style="display:flex;gap:7px;flex-wrap:wrap">
+        ${!inv.sent ? `<button class="btn sm" onclick="markSent(${i})">Mark sent</button>` : ''}
+        ${bal > 0 ? `<button class="btn sm" onclick="addPayment(${i})">Record a payment</button>` : ''}
+        <button class="btn dgr sm" onclick="delInvoice(${i})">Delete</button>
+      </div>
+      ${(inv.payments||[]).length ? '<div class="mini">'
+        + inv.payments.map(p=>`${p.date}: ${M(p.amount)}${p.ref?' ('+p.ref+')':''}`).join(' · ') + '</div>' : ''}
+    </div>`;
+  }).join('');
+}
+
+function fillInvSettings(){
+  if ($('s_bank').dataset.filled) return;
+  $('s_vatreg').value  = invCfg.vatRegistered ? 'yes' : 'no';
+  $('s_vatno').value   = invCfg.vatNo;    $('s_vatrate').value = invCfg.vatRate;
+  $('s_bank').value    = invCfg.bank;     $('s_accname').value = invCfg.accName;
+  $('s_accno').value   = invCfg.accNo;    $('s_branch').value  = invCfg.branch;
+  $('s_terms').value   = invCfg.terms;    $('s_dep').value     = invCfg.depositPct;
+  $('s_bank').dataset.filled = '1';
+}
+function saveInvSettings(){
+  invCfg.vatRegistered = $('s_vatreg').value === 'yes';
+  invCfg.vatNo   = $('s_vatno').value.trim();  invCfg.vatRate = +$('s_vatrate').value || 15;
+  invCfg.bank    = $('s_bank').value.trim();   invCfg.accName = $('s_accname').value.trim();
+  invCfg.accNo   = $('s_accno').value.trim();  invCfg.branch  = $('s_branch').value.trim();
+  invCfg.terms   = +$('s_terms').value || 30;  invCfg.depositPct = +$('s_dep').value || 50;
+  // "Confirmed" means a human answered the VAT question, either way — not that VAT is on.
+  invCfg.confirmed = !!(invCfg.bank && invCfg.accNo) && (!invCfg.vatRegistered || !!invCfg.vatNo);
+  store.set('tms_invcfg', invCfg);
+  renderMoney();
+  alert(invSettingsIncomplete().length
+    ? 'Saved, but still incomplete — see the warning at the top.'
+    : 'Saved. Invoices will carry these details.');
+}
+['i_job','i_pct','i_terms','i_kind'].forEach(id=>{ const e=$(id); if(e){
+  e.addEventListener('input', renderInvHint); e.addEventListener('change', renderInvHint); } });
+
 function addOverhead(){
   const n=$('oh_name').value.trim(); if(!n){alert('Name the cost.');return;}
   setup.overheads.push({name:n, cat:$('oh_cat').value, amt:+$('oh_amt').value||0});
@@ -1672,7 +1952,7 @@ function resetSetup(){ setup=JSON.parse(JSON.stringify(SETUP_DEFAULTS)); store.s
   .forEach(id=>{const e=$(id); if(e) e.addEventListener('change',()=>saveSetup(true));});
 ['wk_prod','wk_markup'].forEach(id=>{const e=$(id); if(e){e.addEventListener('input',renderWorking);e.addEventListener('change',renderWorking);}});
 
-fillCrewGround(); renderCrews(); renderGround(); renderSetup(); renderTrade(); renderJobsPage(); renderStockPage();
+fillCrewGround(); renderCrews(); renderGround(); renderSetup(); renderTrade(); renderJobsPage(); renderStockPage(); renderMoney();
 renderLines(); renderMaterials(); renderPriceList(); renderInstall(); renderInstallSettings();
 
 /* show whether we are on the shared database or this device only */
