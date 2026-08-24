@@ -60,6 +60,15 @@ tr:last-child td{border-bottom:none}
 .a-ok{background:#e8f4ec;border:1px solid #a9d3b8;color:#20603a}
 .mini{font-size:11.5px;color:var(--ink3);line-height:1.6}
 .mat{display:grid;grid-template-columns:1.6fr 1fr 1fr auto;gap:11px;align-items:end;padding:11px 0;border-bottom:1px solid #eee7dd}
+/* Alignment inside a row is a RULE, not a per-row padding tweak. An input is
+   label + 5px + control; its text baseline sits 10px above the box bottom (9px
+   padding + 1px border). Caption cells get that same 10px so their text lines up
+   with the input's text, and buttons bottom-align with the input box. */
+.mat>.mini{padding-bottom:10px}
+.mat>.actions{display:flex;gap:7px;align-items:stretch}
+.mat>.actions .btn{display:flex;align-items:center}
+.mat .rowctl{display:flex;gap:7px;align-items:stretch}
+.mat .rowctl select,.mat .rowctl .btn{height:38px;display:flex;align-items:center}
 .chg{font-size:11.5px;font-weight:700}
 .up{color:var(--bad)}.down{color:var(--ok)}.same{color:var(--ink3)}
 /* A printed quote or invoice is a DOCUMENT, not a screenshot of the app. It is
@@ -1027,7 +1036,7 @@ function renderCrews(){
       <div><b>${c.name}</b><div class="mini">${c.size} people · ${M(c.size*c.rate)} per day total</div></div>
       <div><label>Pay / person / day</label><input type="number" value="${c.rate}" onchange="updCrew(${i},'rate',this.value)"></div>
       <div><label>m² per day (normal ground)</label><input type="number" value="${c.speed}" onchange="updCrew(${i},'speed',this.value)"></div>
-      <div style="padding-bottom:8px">${crews.length>1?`<button class="btn dgr sm" onclick="delCrew(${i})">Remove</button>`:''}</div>
+      <div class="actions">${crews.length>1?`<button class="btn dgr sm" onclick="delCrew(${i})">Remove</button>`:''}</div>
     </div>`).join('');
 }
 function updCrew(i,k,v){ crews[i][k]=parseFloat(v)||0; store.set('tms_crews',crews); renderCrews(); fillCrewGround(); renderLines(); }
@@ -1046,7 +1055,7 @@ function renderGround(){
       <div><b>${g.name}</b><div class="mini">${g.why}</div></div>
       <div><label>Speed factor</label><input type="number" step="0.05" value="${g.speed}" onchange="ground[${i}].speed=parseFloat(this.value)||1"></div>
       <div><label>Base-prep factor</label><input type="number" step="0.05" value="${g.prep}" onchange="ground[${i}].prep=parseFloat(this.value)||1"></div>
-      <div class="mini" style="padding-bottom:12px">${g.speed>1?'faster':g.speed<1?'slower':'baseline'}</div>
+      <div class="mini">${g.speed>1?'faster':g.speed<1?'slower':'baseline'}</div>
     </div>`).join('');
 }
 function saveGround(){ store.set('tms_ground',ground); renderGround(); fillCrewGround(); renderLines(); alert('Ground factors saved.'); }
@@ -1103,7 +1112,7 @@ function renderTrade(){
       <div><b>${t.name}</b><div class="mini">${t.terms}</div></div>
       <div><label>From (m²)</label><input type="number" value="${t.min}" onchange="tiers[${i}].min=+this.value||0"></div>
       <div><label>Mark-up %</label><input type="number" value="${t.markup}" onchange="tiers[${i}].markup=+this.value||0"></div>
-      <div class="mini" style="padding-bottom:12px">${M(unitCosting(PRODUCTS[0],materials,t.markup).perM2)}/m² on SQ200</div>
+      <div class="mini">${M(unitCosting(PRODUCTS[0],materials,t.markup).perM2)}/m² on SQ200</div>
     </div>`).join('');
 }
 function saveTiers(){ store.set('tms_tiers',tiers); renderTrade(); alert('Trade tiers saved.'); }
@@ -1174,8 +1183,8 @@ function renderSetup(){
     <div class="mat">
       <div><b>${o.name}</b><div class="mini">${o.cat}</div></div>
       <div><label>Per month (M)</label><input type="number" value="${o.amt}" onchange="setup.overheads[${i}].amt=+this.value||0;saveSetup(true)"></div>
-      <div class="mini" style="padding-bottom:12px">${(ohTotal()? (o.amt/ohTotal()*100):0).toFixed(0)}% of overhead</div>
-      <div style="padding-bottom:8px"><button class="btn dgr sm" onclick="delOverhead(${i})">Remove</button></div>
+      <div class="mini">${(ohTotal()? (o.amt/ohTotal()*100):0).toFixed(0)}% of overhead</div>
+      <div class="actions"><button class="btn dgr sm" onclick="delOverhead(${i})">Remove</button></div>
     </div>`).join('');
   $('ohTotal').textContent = M(ohTotal());
   const p0 = PRODUCTS[0];
@@ -1215,7 +1224,7 @@ function renderSetup(){
       <div><b>${pr?pr.name:m.product}</b><div class="mini">${(+m.pours).toLocaleString('en-US')} pours expected</div></div>
       <div><label>Cost (M)</label><input type="number" value="${m.cost}" onchange="setup.moulds[${i}].cost=+this.value||0;saveSetup(true)"></div>
       <div><label>Expected pours</label><input type="number" value="${m.pours}" onchange="setup.moulds[${i}].pours=+this.value||1;saveSetup(true)"></div>
-      <div class="mini" style="padding-bottom:12px">${M(m.cost/(m.pours||1))} per paver</div>
+      <div class="mini">${M(m.cost/(m.pours||1))} per paver</div>
     </div>`;
   }).join('') : `<p class="mini">No moulds captured — still using <b>${M(setup.sheet.mould)}</b> per paver from your cost sheet. Add a mould and the real wear takes over.</p>`;
   renderWorking(); renderShare();
@@ -1556,7 +1565,7 @@ function renderJobList(){
         <div><b>${j.job_no} — ${j.customer}</b>
           <div class="mini">${j.site || 'site not set'} · ${j.area} m² · ${(+j.units).toLocaleString('en-US')} pavers
             · ${crew ? crew.name : 'no crew'} · from ${j.quote_no}</div></div>
-        <div style="display:flex;gap:7px;align-items:center">
+        <div class="rowctl">
           <select onchange="setJobStatus(${i}, this.value)">
             ${JOB_STATES.map(st=>`<option ${st===j.status?'selected':''}>${st}</option>`).join('')}
           </select>
@@ -2185,7 +2194,7 @@ function priceLine(i, j){
         <div style="flex:1;min-width:150px"><label>Price for this job (M)</label>
           <input type="number" step="100" value="${now.toFixed(2)}"
                  onchange="setJobPrice(${i}, this.value)"></div>
-        <div class="mini" style="padding-bottom:12px">
+        <div class="mini">
           Quoted ${M(quoted)}${Math.abs(diff) > 0.005
             ? ` · <b>${diff > 0 ? 'up' : 'down'} ${M(Math.abs(diff))}</b>` : ' · unchanged'}
           ${j.price_override != null
