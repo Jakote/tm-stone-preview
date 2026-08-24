@@ -72,11 +72,14 @@ tr:last-child td{border-bottom:none}
 }
 @media(max-width:820px){.g2,.g3,.g4,.mat{grid-template-columns:1fr}.tot{grid-template-columns:1fr}.tabs{overflow-x:auto}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="data.js"></script>
 </head>
 <body>
 
 <div class="top"><div class="tw">
-  <div class="lg"><div class="lgm">TM</div><div><b>TM Stone</b><span>QUOTE BUILDER</span></div></div>
+  <div class="lg"><div class="lgm">TM</div><div><b>TM Stone</b><span id="modeLbl">QUOTE BUILDER</span></div></div>
   <div class="tabs">
     <button class="tab on" data-p="quote">New Quote</button>
     <button class="tab" data-p="saved">Saved Quotes</button>
@@ -412,6 +415,15 @@ function renderPriceList(tmp){
 }
 
 renderLines(); renderMaterials(); renderPriceList();
+
+/* show whether we are on the shared database or this device only */
+(function(){
+  const el=document.getElementById('modeLbl'); if(!el||!window.TMS) return;
+  el.textContent = TMS.mode==='cloud' ? 'QUOTE BUILDER · SHARED' : 'QUOTE BUILDER · THIS DEVICE';
+  el.title = TMS.mode==='cloud'
+    ? 'Connected to the shared TM Stone database — everyone sees the same quotes.'
+    : 'Not connected yet: quotes are saved on this device only. Fill in config.js to go shared.';
+})();
 </script>
 </body>
 </html>
