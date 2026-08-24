@@ -71,6 +71,14 @@ tr:last-child td{border-bottom:none}
   @page{margin:16mm}
 }
 @media(max-width:820px){.g2,.g3,.g4,.mat{grid-template-columns:1fr}.tot{grid-template-columns:1fr}.tabs{overflow-x:auto}}
+/* Setup on a phone: he is standing in the yard entering numbers, not reading a report.
+   Keep each captured row to one compact line instead of a full screen of scrolling. */
+@media(max-width:820px){
+  #ohRows .mat{grid-template-columns:1fr auto auto}#mouldRows .mat{grid-template-columns:1fr auto auto}#ohRows .mat,#mouldRows .mat{align-items:center;gap:8px;padding:9px 0}
+  #ohRows .mat>div:nth-child(3),#mouldRows .mat>div:nth-child(4){display:none}
+  #ohRows .mat input,#mouldRows .mat input{width:118px;text-align:right}
+  #ohRows .mat label,#mouldRows .mat label{display:none}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
@@ -83,6 +91,7 @@ tr:last-child td{border-bottom:none}
   <div class="tabs">
     <button class="tab on" data-p="quote">New Quote</button>
     <button class="tab" data-p="saved">Saved Quotes</button>
+    <button class="tab" data-p="setup">Setup</button>
     <button class="tab" data-p="trade">Trade Supply</button>
     <button class="tab" data-p="materials">Rates &amp; Setup</button>
   </div>
@@ -196,6 +205,93 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+
+
+<div class="page" id="p-setup">
+  <div class="alert a-ok" style="margin-bottom:14px">
+    <b>Everything else in this system is calculated from what you enter here.</b>
+    Nothing is fixed in the code. Change a number and every price, quote, price list and
+    trade rate moves with it. Leave a section blank and the system keeps using the figure
+    from your existing cost sheet — so nothing breaks while you fill it in.
+  </div>
+
+  <div class="card">
+    <h2>What the yard costs to run</h2>
+    <div class="sub">Monthly costs that are not materials. These are spread across everything you make.</div>
+    <div id="ohRows"></div>
+    <div class="g4" style="margin-top:12px">
+      <div><label>Cost name</label><input id="oh_name" placeholder="e.g. Yard rent"></div>
+      <div><label>Category</label><select id="oh_cat"><option>fixed</option><option>labour</option><option>utilities</option><option>equipment</option><option>other</option></select></div>
+      <div><label>Per month (M)</label><input type="number" id="oh_amt" step="50" min="0"></div>
+      <div><button class="btn" onclick="addOverhead()">Add</button></div>
+    </div>
+    <div class="tot" style="margin-top:16px">
+      <div><div class="lbl">Total monthly overhead</div><div class="big" id="ohTotal">M0.00</div>
+      <div class="brk" id="ohNote"></div></div>
+    </div>
+    <div id="ohCompare"></div>
+  </div>
+
+  <div class="card">
+    <h2>How much you make in a month</h2>
+    <div class="sub">This is what the overhead is divided by. Be honest — optimistic output hides real cost.</div>
+    <div class="g3">
+      <div><label>Working days per month</label><input type="number" id="cap_days" min="1" step="1"></div>
+      <div><label>Batches per day</label><input type="number" id="cap_batches" min="0.5" step="0.5"></div>
+      <div><label>Batch yield (litres of product)</label><input type="number" id="cap_yield" min="1" step="1"></div>
+    </div>
+    <p class="mini" id="capNote" style="margin-top:10px"></p>
+  </div>
+
+  <div class="card">
+    <h2>Batch recipe</h2>
+    <div class="sub">What goes into one batch. Change the mix and every material cost recalculates.</div>
+    <div class="g4">
+      <div><label>Cement (50 kg bags)</label><input type="number" id="br_cem" step="0.05" min="0"></div>
+      <div><label>Sand (litres)</label><input type="number" id="br_sand" step="5" min="0"></div>
+      <div><label>Stone (litres)</label><input type="number" id="br_stone" step="5" min="0"></div>
+      <div><label>Pigment (kg)</label><input type="number" id="br_pig" step="0.05" min="0"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Moulds</h2>
+    <div class="sub">A mould wears out. Its cost divided by how many casts it survives is a real cost per paver.</div>
+    <div id="mouldRows"></div>
+    <div class="g4" style="margin-top:12px">
+      <div><label>Product</label><select id="md_prod"></select></div>
+      <div><label>Mould cost (M)</label><input type="number" id="md_cost" step="100" min="0"></div>
+      <div><label>Expected pours</label><input type="number" id="md_pours" step="1000" min="1" value="20000"></div>
+      <div><button class="btn" onclick="addMould()">Add mould</button></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Supplier measures</h2>
+    <div class="sub">Only change these if your supplier delivers differently.</div>
+    <div class="g4">
+      <div><label>Sand load size (m³)</label><input type="number" id="k_sand" step="0.5" min="0.5"></div>
+      <div><label>Stone density (t/m³)</label><input type="number" id="k_stone" step="0.05" min="0.5"></div>
+      <div><label>Pigment bag (kg)</label><input type="number" id="k_pig" step="1" min="1"></div>
+      <div><label>Cement bag (kg)</label><input type="number" id="k_cem" step="1" min="1"></div>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:9px;flex-wrap:wrap">
+      <button class="btn" onclick="saveSetup()">Save all setup</button>
+      <button class="btn ghost" onclick="resetSetup()">Reset to Aug 2026 figures</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Where every price comes from</h2>
+    <div class="sub">The full working for one paver, from what you entered above. Nothing hidden.</div>
+    <div class="g2" style="margin-bottom:14px">
+      <div><label>Product</label><select id="wk_prod"></select></div>
+      <div><label>Mark-up %</label><input type="number" id="wk_markup" value="40" step="1"></div>
+    </div>
+    <table><thead><tr><th>Component</th><th class="num">Per paver</th><th>How it is worked out</th></tr></thead>
+      <tbody id="wkRows"></tbody></table>
+  </div>
+</div>
 
 <div class="page" id="p-trade">
   <div class="card">
@@ -338,12 +434,16 @@ function batchCost(p){
        + (RECIPE.stone_litres/1000)*STONE_T_PER_M3*p.STONE
        + (RECIPE.pigment_kg/25)*p.PIGMENT;
 }
+/* Delegates to the derived model once setup exists. The frozen constants remain
+   only as the very first-run fallback, and Setup overwrites them immediately. */
 function unitCosting(prod, prices, markup){
+  if (typeof unitCostingD === 'function' && typeof setup !== 'undefined') {
+    return unitCostingD(prod, prices, markup);
+  }
   const perBatch = RECIPE.yield_litres/prod.litres;
   const material = batchCost(prices)/perBatch;
   const cost = material + OVERHEAD + MOULD;
-  const price = cost*(1+markup/100);           // MARK-UP
-  return { perBatch, material, cost, price, perM2: price/prod.face };
+  return { perBatch, material, cost, price: cost*(1+markup/100), perM2: cost*(1+markup/100)/prod.face };
 }
 
 /* ---------- tabs ---------- */
@@ -354,6 +454,7 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   if(t.dataset.p==='saved') renderSaved();
   if(t.dataset.p==='materials'){ renderMaterials(); renderPriceList(); renderCrews(); renderGround(); }
   if(t.dataset.p==='trade'){ renderTrade(); }
+  if(t.dataset.p==='setup'){ renderSetup(); }
 });
 
 /* ---------- quote lines ---------- */
@@ -777,7 +878,165 @@ function renderTrade(){
 function saveTiers(){ store.set('tms_tiers',tiers); renderTrade(); alert('Trade tiers saved.'); }
 ['tArea','tProd','tCompare'].forEach(id=>{ const e=$(id); if(e){ e.addEventListener('input',renderTrade); e.addEventListener('change',renderTrade);} });
 
-fillCrewGround(); renderCrews(); renderGround(); renderTrade();
+
+/* ============ SETUP: capture the primitives, derive the rest ============
+   Replaces the frozen constants (overhead 1.0341, mould 0.1200) with numbers
+   the owner enters. Every derived figure can show its own working. */
+const SETUP_DEFAULTS = {
+  /* Names only, amounts 0. We do NOT invent his costs — these are prompts to fill in.
+     Until they are filled, the system keeps using the figure off his own cost sheet. */
+  overheads: [
+    {name:'Yard rent',            cat:'fixed',     amt:0},
+    {name:'Electricity & water',  cat:'utilities', amt:0},
+    {name:'Yard staff wages',     cat:'labour',    amt:0},
+    {name:'Mixer & equipment servicing', cat:'equipment', amt:0},
+    {name:'Transport / diesel',   cat:'other',     amt:0},
+    {name:'Other running costs',  cat:'other',     amt:0}
+  ],
+  cap:    { days:22, batches:2, yield:432 },   // 432 L = his batch yield, verified
+  recipe: { cement:2.75, sand:220, stone:220, pigment:2.75 },
+  moulds: [],
+  consts: { sandLoad:12, stoneT:1.6, pigBag:25, cemBag:50 },
+  /* His published cost sheet (Aug 2026). Used until he captures his own figures,
+     and kept afterwards so the two can be compared instead of one silently winning. */
+  sheet:  { overhead:1.0341, mould:0.1200 }
+};
+const ohTotal   = () => setup.overheads.filter(o=>o.amt>0).reduce((s,o)=>s+ +o.amt,0);
+const batchesPM = () => setup.cap.days * setup.cap.batches;
+const unitsPM   = prod => batchesPM() * (setup.cap.yield / prod.litres);
+let setup = store.get('tms_setup', null) || JSON.parse(JSON.stringify(SETUP_DEFAULTS));
+if (!setup.sheet) setup.sheet = { overhead:1.0341, mould:0.1200 };   // upgrade older saves
+
+const capturedOverhead = prod => { const u=unitsPM(prod); return u ? ohTotal()/u : 0; };
+const capturedMould = prod => {
+  const ms = setup.moulds.filter(m=>m.product===prod.code);
+  const cost = ms.reduce((s,m)=>s+ +m.cost,0), pours = ms.reduce((s,m)=>s+ +m.pours,0);
+  return pours ? cost/pours : 0;
+};
+/* Captured data wins ONLY once it exists. No capture = his own cost sheet, unchanged,
+   so nothing he already quoted moves until he decides it should. */
+const usingCapturedOh    = () => ohTotal() > 0;
+const usingCapturedMould = prod => setup.moulds.some(m=>m.product===prod.code && m.pours>0);
+const derivedOverhead = prod => usingCapturedOh() ? capturedOverhead(prod) : setup.sheet.overhead;
+const derivedMould    = prod => usingCapturedMould(prod) ? capturedMould(prod) : setup.sheet.mould;
+
+/* batchCost and unitCosting now read from setup, not from constants */
+function batchCostD(prices){
+  const r=setup.recipe, k=setup.consts;
+  return r.cement*prices.CEMENT
+       + (r.sand/1000)/k.sandLoad*prices.SAND
+       + (r.stone/1000)*k.stoneT*prices.STONE
+       + (r.pigment/k.pigBag)*prices.PIGMENT;
+}
+function unitCostingD(prod, prices, markup){
+  const perBatch = setup.cap.yield / prod.litres;
+  const material = batchCostD(prices)/perBatch;
+  const oh = derivedOverhead(prod), md = derivedMould(prod);
+  const cost = material + oh + md;
+  const price = cost*(1+markup/100);
+  return { perBatch, material, overhead:oh, mould:md, cost, price, perM2: price/prod.face };
+}
+
+function renderSetup(){
+  if(!$('ohRows')) return;
+  $('ohRows').innerHTML = setup.overheads.map((o,i)=>`
+    <div class="mat">
+      <div><b>${o.name}</b><div class="mini">${o.cat}</div></div>
+      <div><label>Per month (M)</label><input type="number" value="${o.amt}" onchange="setup.overheads[${i}].amt=+this.value||0;saveSetup(true)"></div>
+      <div class="mini" style="padding-bottom:12px">${(ohTotal()? (o.amt/ohTotal()*100):0).toFixed(0)}% of overhead</div>
+      <div style="padding-bottom:8px"><button class="btn dgr sm" onclick="delOverhead(${i})">Remove</button></div>
+    </div>`).join('');
+  $('ohTotal').textContent = M(ohTotal());
+  const p0 = PRODUCTS[0];
+  $('ohNote').innerHTML = usingCapturedOh()
+    ? `Spread over about <b>${Math.round(unitsPM(p0)).toLocaleString('en-US')}</b> ${p0.code} pavers a month = <b>${M(capturedOverhead(p0))}</b> of overhead in every paver.`
+    : `Nothing captured yet — still using <b>${M(setup.sheet.overhead)}</b> per paver from your own cost sheet. Fill these in and the system takes over.`;
+  const cmp = $('ohCompare');
+  if (cmp) {
+    if (!usingCapturedOh()) { cmp.innerHTML = ''; }
+    else {
+      const mine = capturedOverhead(p0), his = setup.sheet.overhead, diff = mine - his;
+      const pct = his ? Math.abs(diff/his*100) : 0;
+      cmp.innerHTML = `<div class="alert ${pct>10?'a-warn':'a-ok'}" style="margin-top:14px">
+        <b>Your cost sheet says ${M(his)} per paver. What you have captured says ${M(mine)}.</b><br>
+        ${pct<1 ? 'They agree — the cost sheet was right.'
+          : (diff>0
+            ? `You are <b>${M(diff)} per paver (${pct.toFixed(0)}%) cheaper on paper than in reality.</b> On a 3,000-paver job that is ${M(diff*3000)} you thought was profit.`
+            : `You are costing <b>${M(-diff)} per paver more than you need to</b> — ${pct.toFixed(0)}% of headroom you can price with or keep.`)}
+        <br><span class="mini">Captured figures now drive every price. To go back to the cost sheet, clear the amounts above.</span></div>`;
+    }
+  }
+
+  $('cap_days').value=setup.cap.days; $('cap_batches').value=setup.cap.batches; $('cap_yield').value=setup.cap.yield;
+  $('capNote').innerHTML = `${setup.cap.days} days × ${setup.cap.batches} batches = <b>${batchesPM()}</b> batches a month → about <b>${Math.round(unitsPM(p0)).toLocaleString('en-US')}</b> ${p0.code} pavers.`;
+  $('br_cem').value=setup.recipe.cement; $('br_sand').value=setup.recipe.sand;
+  $('br_stone').value=setup.recipe.stone; $('br_pig').value=setup.recipe.pigment;
+  $('k_sand').value=setup.consts.sandLoad; $('k_stone').value=setup.consts.stoneT;
+  $('k_pig').value=setup.consts.pigBag;   $('k_cem').value=setup.consts.cemBag;
+
+  if(!$('md_prod').options.length){
+    $('md_prod').innerHTML = PRODUCTS.map(p=>`<option value="${p.code}">${p.name}</option>`).join('');
+    $('wk_prod').innerHTML = PRODUCTS.map(p=>`<option value="${p.code}">${p.name}</option>`).join('');
+  }
+  $('mouldRows').innerHTML = setup.moulds.length ? setup.moulds.map((m,i)=>{
+    const pr=PRODUCTS.find(p=>p.code===m.product);
+    return `<div class="mat">
+      <div><b>${pr?pr.name:m.product}</b><div class="mini">${(+m.pours).toLocaleString('en-US')} pours expected</div></div>
+      <div><label>Cost (M)</label><input type="number" value="${m.cost}" onchange="setup.moulds[${i}].cost=+this.value||0;saveSetup(true)"></div>
+      <div><label>Expected pours</label><input type="number" value="${m.pours}" onchange="setup.moulds[${i}].pours=+this.value||1;saveSetup(true)"></div>
+      <div class="mini" style="padding-bottom:12px">${M(m.cost/(m.pours||1))} per paver</div>
+    </div>`;
+  }).join('') : `<p class="mini">No moulds captured — still using <b>${M(setup.sheet.mould)}</b> per paver from your cost sheet. Add a mould and the real wear takes over.</p>`;
+  renderWorking();
+}
+
+function renderWorking(){
+  if(!$('wkRows')) return;
+  const prod = PRODUCTS.find(p=>p.code===$('wk_prod').value)||PRODUCTS[0];
+  const mk = +$('wk_markup').value||40;
+  const k=setup.consts, r=setup.recipe, pb=setup.cap.yield/prod.litres;
+  const rows=[
+    ['Cement',  r.cement*materials.CEMENT/pb,           `${r.cement} bags × ${M(materials.CEMENT)} ÷ ${Math.round(pb)} pavers per batch`],
+    ['Sand',    (r.sand/1000)/k.sandLoad*materials.SAND/pb, `${r.sand} L of a ${k.sandLoad} m³ load (${M(materials.SAND)}) ÷ ${Math.round(pb)}`],
+    ['Stone',   (r.stone/1000)*k.stoneT*materials.STONE/pb, `${r.stone} L × ${k.stoneT} t/m³ × ${M(materials.STONE)}/t ÷ ${Math.round(pb)}`],
+    ['Pigment', (r.pigment/k.pigBag)*materials.PIGMENT/pb,  `${r.pigment} kg of a ${k.pigBag} kg bag (${M(materials.PIGMENT)}) ÷ ${Math.round(pb)}`],
+    ['Overhead',derivedOverhead(prod), usingCapturedOh()
+        ? `${M(ohTotal())}/month ÷ ${Math.round(unitsPM(prod)).toLocaleString('en-US')} pavers made`
+        : 'from your cost sheet — no monthly costs captured yet'],
+    ['Mould wear',derivedMould(prod),                    usingCapturedMould(prod)?'mould cost ÷ expected pours you captured':'from your cost sheet — no mould captured yet'],
+  ];
+  const cost = rows.reduce((s,x)=>s+x[1],0);
+  $('wkRows').innerHTML = rows.map(x=>
+    `<tr><td>${x[0]}</td><td class="num">${M(x[1])}</td><td class="mini">${x[2]}</td></tr>`).join('')
+    + `<tr style="background:#f7f4ef"><td><b>Cost per paver</b></td><td class="num"><b>${M(cost)}</b></td><td class="mini">sum of the above</td></tr>`
+    + `<tr style="background:#fdf6f2"><td><b>Selling price</b></td><td class="num"><b>${M(cost*(1+mk/100))}</b></td><td class="mini">cost × ${(1+mk/100).toFixed(2)} — a ${mk}% mark-up</td></tr>`
+    + `<tr><td><b>Per m²</b></td><td class="num"><b>${M(cost*(1+mk/100)/prod.face)}</b></td><td class="mini">${(1/prod.face).toFixed(0)} pavers cover 1 m²</td></tr>`;
+}
+
+function addOverhead(){
+  const n=$('oh_name').value.trim(); if(!n){alert('Name the cost.');return;}
+  setup.overheads.push({name:n, cat:$('oh_cat').value, amt:+$('oh_amt').value||0});
+  $('oh_name').value=''; $('oh_amt').value=''; saveSetup(true);
+}
+function delOverhead(i){ setup.overheads.splice(i,1); saveSetup(true); }
+function addMould(){
+  setup.moulds.push({product:$('md_prod').value, cost:+$('md_cost').value||0, pours:+$('md_pours').value||1});
+  $('md_cost').value=''; saveSetup(true);
+}
+function saveSetup(silent){
+  setup.cap={days:+$('cap_days').value||22, batches:+$('cap_batches').value||1, yield:+$('cap_yield').value||432};
+  setup.recipe={cement:+$('br_cem').value||0, sand:+$('br_sand').value||0, stone:+$('br_stone').value||0, pigment:+$('br_pig').value||0};
+  setup.consts={sandLoad:+$('k_sand').value||12, stoneT:+$('k_stone').value||1.6, pigBag:+$('k_pig').value||25, cemBag:+$('k_cem').value||50};
+  store.set('tms_setup', setup);
+  renderSetup(); renderLines(); renderPriceList(); if(typeof renderTrade==='function') renderTrade();
+  if(!silent) alert('Saved. Every price in the system now uses these figures.');
+}
+function resetSetup(){ setup=JSON.parse(JSON.stringify(SETUP_DEFAULTS)); store.set('tms_setup',setup); saveSetup(true); }
+['cap_days','cap_batches','cap_yield','br_cem','br_sand','br_stone','br_pig','k_sand','k_stone','k_pig','k_cem']
+  .forEach(id=>{const e=$(id); if(e) e.addEventListener('change',()=>saveSetup(true));});
+['wk_prod','wk_markup'].forEach(id=>{const e=$(id); if(e){e.addEventListener('input',renderWorking);e.addEventListener('change',renderWorking);}});
+
+fillCrewGround(); renderCrews(); renderGround(); renderSetup(); renderTrade();
 renderLines(); renderMaterials(); renderPriceList(); renderInstall(); renderInstallSettings();
 
 /* show whether we are on the shared database or this device only */
