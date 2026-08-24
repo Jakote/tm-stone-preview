@@ -83,7 +83,8 @@ tr:last-child td{border-bottom:none}
   <div class="tabs">
     <button class="tab on" data-p="quote">New Quote</button>
     <button class="tab" data-p="saved">Saved Quotes</button>
-    <button class="tab" data-p="materials">Material Prices</button>
+    <button class="tab" data-p="trade">Trade Supply</button>
+    <button class="tab" data-p="materials">Rates &amp; Setup</button>
   </div>
 </div></div>
 
@@ -139,6 +140,15 @@ tr:last-child td{border-bottom:none}
 
     <div id="rateWarn"></div>
 
+    <div class="g4" style="margin-bottom:11px">
+      <div><label>Crew on this job</label><select id="icrew"></select></div>
+      <div><label>Ground conditions</label><select id="iground"></select></div>
+      <div><label>Transport trips</label><input type="number" id="itrips" value="1" min="0" step="1"></div>
+      <div><label>Base preparation</label>
+        <select id="ibase"><option value="1">Include (excavate + sub-base)</option><option value="0">Exclude — base is ready</option></select></div>
+    </div>
+    <p class="mini" id="groundNote" style="margin:-4px 0 14px"></p>
+
     <div class="g4" style="margin-bottom:14px">
       <div><label>Charge installation</label>
         <select id="imode">
@@ -147,10 +157,8 @@ tr:last-child td{border-bottom:none}
           <option value="per_day">Per day</option>
           <option value="per_job">Fixed price for the job</option>
         </select></div>
-      <div><label>Base preparation</label>
-        <select id="ibase"><option value="1">Include (excavate + sub-base)</option><option value="0">Exclude — base is ready</option></select></div>
-      <div><label>Transport trips</label><input type="number" id="itrips" value="1" min="0" step="1"></div>
       <div><label>Override charge (M)</label><input type="number" id="ioverride" placeholder="leave blank to use calc" step="0.01"></div>
+      <div></div><div></div>
     </div>
 
     <table id="iCompare">
@@ -188,6 +196,41 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+
+<div class="page" id="p-trade">
+  <div class="card">
+    <h2>Trade supply — manufacturing for other pavers</h2>
+    <div class="sub">Other contractors buy your pavers and lay them themselves. No labour, no site risk — volume instead.</div>
+    <div class="alert a-ok" style="margin-bottom:16px">
+      <b>Why this line is worth having.</b> On installed work you earn on pavers <i>and</i> labour, but you can only lay
+      one job at a time. On trade supply you earn less per m² and carry no site risk — and the yard can run flat out.
+      One contractor buying 500 m² a month is worth more than chasing five driveways.
+    </div>
+    <div class="g3">
+      <div><label>Order size (m²)</label><input type="number" id="tArea" value="500" min="1" step="10"></div>
+      <div><label>Product</label><select id="tProd"></select></div>
+      <div><label>Compare against installed job at</label><input type="number" id="tCompare" value="40" step="1"> </div>
+    </div>
+    <div id="tierBox" style="margin-top:18px"></div>
+  </div>
+
+  <div class="card">
+    <h2>Trade price list</h2>
+    <div class="sub">At today's material costs. Print this and leave it with every contractor in Maseru.</div>
+    <table><thead><tr><th>Product</th><th>Tier</th><th class="num">From (m²)</th><th class="num">Per paver</th><th class="num">Per m²</th><th>Terms</th></tr></thead>
+      <tbody id="tListRows"></tbody></table>
+    <div style="margin-top:14px" class="noprint"><button class="btn ghost" onclick="window.print()">Print price list</button></div>
+    <p class="mini" style="margin-top:10px">Prices ex-yard, collection by the buyer. Delivery quoted separately. Valid while material costs hold — reprint when cement moves.</p>
+  </div>
+
+  <div class="card noprint">
+    <h2>Trade tiers</h2>
+    <div class="sub">Volume unlocks a better rate. Set the mark-up you are willing to give at each level.</div>
+    <div id="tierEdit"></div>
+    <button class="btn" style="margin-top:12px" onclick="saveTiers()">Save tiers</button>
+  </div>
+</div>
+
 <!-- ================= MATERIALS ================= -->
 <div class="page" id="p-materials">
   <div class="card">
@@ -202,25 +245,39 @@ tr:last-child td{border-bottom:none}
 
 
   <div class="card">
-    <h2>Installation rates</h2>
-    <div class="sub">What laying a job actually costs you. Everything above is calculated from these.</div>
-    <div class="g3">
-      <div><label>Crew size (people)</label><input type="number" id="s_crew" step="1" min="1"></div>
-      <div><label>Day rate per person (M)</label><input type="number" id="s_rate" step="10" min="0"></div>
-      <div><label>Laying speed (m² per day)</label><input type="number" id="s_speed" step="1" min="1"></div>
+    <h2>Crews</h2>
+    <div class="sub">Your teams and what they cost. Add as many as you run.</div>
+    <div id="crewRows"></div>
+    <div class="g4" style="margin-top:14px">
+      <div><label>Crew name</label><input id="nc_name" placeholder="e.g. Team A"></div>
+      <div><label>People</label><input type="number" id="nc_size" value="4" min="1"></div>
+      <div><label>Pay per person / day (M)</label><input type="number" id="nc_rate" value="200" min="0" step="10"></div>
+      <div><button class="btn" onclick="addCrew()">Add crew</button></div>
     </div>
-    <div class="g3" style="margin-top:11px">
+    <p class="mini" style="margin-top:10px">Laying speed is set per crew on normal ground, then adjusted by the site conditions on each quote.</p>
+  </div>
+
+  <div class="card">
+    <h2>Ground conditions</h2>
+    <div class="sub">The same crew lays far less on bad ground. These factors are what stop a quote going wrong.</div>
+    <div id="groundRows"></div>
+    <button class="btn" style="margin-top:12px" onclick="saveGround()">Save ground factors</button>
+  </div>
+
+  <div class="card">
+    <h2>Other installation costs</h2>
+    <div class="sub">Per m² unless stated</div>
+    <div class="g3">
       <div><label>Bedding sand etc. (M per m²)</label><input type="number" id="s_bed" step="0.5" min="0"></div>
-      <div><label>Base preparation (M per m²)</label><input type="number" id="s_base" step="1" min="0"></div>
+      <div><label>Base preparation (M per m², normal ground)</label><input type="number" id="s_base" step="1" min="0"></div>
       <div><label>Transport per trip (M)</label><input type="number" id="s_trans" step="10" min="0"></div>
     </div>
     <div style="margin-top:14px;display:flex;gap:9px;align-items:center;flex-wrap:wrap">
-      <button class="btn" onclick="saveInstall()">Save installation rates</button>
+      <button class="btn" onclick="saveInstall()">Save</button>
       <label style="display:flex;align-items:center;gap:7px;margin:0;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink2)">
         <input type="checkbox" id="s_confirmed" style="width:auto"> These are my real figures
       </label>
     </div>
-    <p class="mini" style="margin-top:10px">Until that box is ticked, every quote shows a warning that installation prices are estimates.</p>
   </div>
 
   <div class="card">
@@ -295,7 +352,8 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
   t.classList.add('on'); $('p-'+t.dataset.p).classList.add('on');
   if(t.dataset.p==='saved') renderSaved();
-  if(t.dataset.p==='materials'){ renderMaterials(); renderPriceList(); }
+  if(t.dataset.p==='materials'){ renderMaterials(); renderPriceList(); renderCrews(); renderGround(); }
+  if(t.dataset.p==='trade'){ renderTrade(); }
 });
 
 /* ---------- quote lines ---------- */
@@ -478,12 +536,16 @@ const INSTALL_DEFAULTS = { crew:4, rate:200, speed:35, bed:12, base:55, trans:35
 let install = store.get('tms_install', null) || {...INSTALL_DEFAULTS};
 
 function installCost(area, includeBase, trips){
-  const days  = Math.ceil(area / (install.speed || 1));
-  const labour= days * install.crew * install.rate;
+  const crew = (typeof currentCrew==='function' && crews && crews.length) ? currentCrew() : {size:install.crew,rate:install.rate,speed:install.speed};
+  const g    = (typeof currentGround==='function' && ground) ? currentGround() : {speed:1,prep:1};
+  const effectiveSpeed = (crew.speed || 35) * (g.speed || 1);      // ground changes how much they lay
+  const days  = Math.ceil(area / (effectiveSpeed || 1));
+  const labour= days * crew.size * crew.rate;
   const cons  = area * install.bed;
-  const base  = includeBase ? area * install.base : 0;
+  const base  = includeBase ? area * install.base * (g.prep || 1) : 0;   // and how hard the digging is
   const trans = (trips||0) * install.trans;
-  return { days, labour, cons, base, trans, total: labour+cons+base+trans };
+  return { days, labour, cons, base, trans, total: labour+cons+base+trans,
+           crewName: crew.name, groundName: g.name, effectiveSpeed };
 }
 
 function installOptions(area, markup, includeBase, trips){
@@ -511,6 +573,12 @@ function renderInstall(){
   const trips = +$('itrips').value || 0;
   const mode = $('imode').value;
 
+  const _g = (typeof currentGround==='function') ? currentGround() : null;
+  const _c = (typeof currentCrew==='function') ? currentCrew() : null;
+  if ($('groundNote') && _g && _c){
+    const eff = (_c.speed||35)*(_g.speed||1);
+    $('groundNote').innerHTML = `<b>${_c.name}</b> (${_c.size} people, ${M(_c.size*_c.rate)}/day) on <b>${_g.name.split(' — ')[0]}</b> ground lays about <b>${eff.toFixed(0)} m² a day</b> — ${_g.why} ${_g.speed!==1?`Base prep ×${_g.prep}.`:''}`;
+  }
   $('rateWarn').innerHTML = install.confirmed ? '' :
     '<div class="alert a-warn"><b>Installation rates are still estimates.</b> Set your real crew size, day rate and laying speed under <b>Material Prices → Installation rates</b>, then tick "These are my real figures". Until then, do not send an installation price to a customer.</div>';
 
@@ -585,10 +653,131 @@ function saveInstall(){
 /* Changing any installation control must re-run the whole quote, not just the
    comparison table — the total includes installation. renderLines() calls
    renderInstall() at the end, so this is one pass, not a loop. */
-['imode','ibase','itrips','ioverride'].forEach(id=>{
+['imode','ibase','itrips','ioverride','icrew','iground'].forEach(id=>{
   const el=$(id); if(el){ el.addEventListener('input',renderLines); el.addEventListener('change',renderLines); }
 });
 
+
+/* ============ CREWS · GROUND · TRADE ============ */
+const CREW_DEFAULTS = [{id:'c1',name:'Team A',size:4,rate:200,speed:35}];
+const GROUND_DEFAULTS = [
+  {code:'EASY',   name:'Easy — flat, already compacted',     speed:1.30, prep:0.70, why:'Existing slab or well-compacted base.'},
+  {code:'NORMAL', name:'Normal — level ground, ordinary soil',speed:1.00, prep:1.00, why:'Standard driveway or yard. The baseline.'},
+  {code:'AWKWARD',name:'Awkward — slopes, curves, many cuts', speed:0.70, prep:1.20, why:'Sloping or curved. Slower, more cutting and waste.'},
+  {code:'HARD',   name:'Hard — rocky, wet or poor soil',      speed:0.50, prep:1.60, why:'Rock, clay or waterlogged. Heavy excavation.'},
+  {code:'TIGHT',  name:'Tight access — no vehicle access',    speed:0.60, prep:1.10, why:'Barrows only, everything carried in.'}
+];
+const TIER_DEFAULTS = [
+  {name:'Casual / small order', min:0,    markup:35, terms:'Cash on collection'},
+  {name:'Trade',                min:100,  markup:28, terms:'Cash on collection'},
+  {name:'Trade Plus',           min:500,  markup:22, terms:'50% deposit, balance on delivery'},
+  {name:'Contract',             min:1500, markup:18, terms:'30 days on approved account'}
+];
+let crews  = store.get('tms_crews',  null) || CREW_DEFAULTS.map(c=>({...c}));
+let ground = store.get('tms_ground', null) || GROUND_DEFAULTS.map(g=>({...g}));
+let tiers  = store.get('tms_tiers',  null) || TIER_DEFAULTS.map(t=>({...t}));
+
+function currentCrew(){ return crews.find(c=>c.id===$('icrew').value) || crews[0]; }
+function currentGround(){ return ground.find(g=>g.code===$('iground').value) || ground.find(g=>g.code==='NORMAL'); }
+
+function fillCrewGround(){
+  const cs=$('icrew'), gs=$('iground'); if(!cs||!gs) return;
+  const cv=cs.value, gv=gs.value;
+  cs.innerHTML = crews.map(c=>`<option value="${c.id}">${c.name} — ${c.size} people</option>`).join('');
+  gs.innerHTML = ground.map(g=>`<option value="${g.code}">${g.name}</option>`).join('');
+  if(cv) cs.value=cv; if(gv) gs.value=gv; else gs.value='NORMAL';
+}
+
+function renderCrews(){
+  const el=$('crewRows'); if(!el) return;
+  el.innerHTML = crews.map((c,i)=>`
+    <div class="mat">
+      <div><b>${c.name}</b><div class="mini">${c.size} people · ${M(c.size*c.rate)} per day total</div></div>
+      <div><label>Pay / person / day</label><input type="number" value="${c.rate}" onchange="updCrew(${i},'rate',this.value)"></div>
+      <div><label>m² per day (normal ground)</label><input type="number" value="${c.speed}" onchange="updCrew(${i},'speed',this.value)"></div>
+      <div style="padding-bottom:8px">${crews.length>1?`<button class="btn dgr sm" onclick="delCrew(${i})">Remove</button>`:''}</div>
+    </div>`).join('');
+}
+function updCrew(i,k,v){ crews[i][k]=parseFloat(v)||0; store.set('tms_crews',crews); renderCrews(); fillCrewGround(); renderLines(); }
+function addCrew(){
+  const n=$('nc_name').value.trim(); if(!n){ alert('Give the crew a name.'); return; }
+  crews.push({id:'c'+Date.now(), name:n, size:+$('nc_size').value||1, rate:+$('nc_rate').value||0, speed:35});
+  store.set('tms_crews',crews); $('nc_name').value='';
+  renderCrews(); fillCrewGround(); renderLines();
+}
+function delCrew(i){ crews.splice(i,1); store.set('tms_crews',crews); renderCrews(); fillCrewGround(); renderLines(); }
+
+function renderGround(){
+  const el=$('groundRows'); if(!el) return;
+  el.innerHTML = ground.map((g,i)=>`
+    <div class="mat">
+      <div><b>${g.name}</b><div class="mini">${g.why}</div></div>
+      <div><label>Speed factor</label><input type="number" step="0.05" value="${g.speed}" onchange="ground[${i}].speed=parseFloat(this.value)||1"></div>
+      <div><label>Base-prep factor</label><input type="number" step="0.05" value="${g.prep}" onchange="ground[${i}].prep=parseFloat(this.value)||1"></div>
+      <div class="mini" style="padding-bottom:12px">${g.speed>1?'faster':g.speed<1?'slower':'baseline'}</div>
+    </div>`).join('');
+}
+function saveGround(){ store.set('tms_ground',ground); renderGround(); fillCrewGround(); renderLines(); alert('Ground factors saved.'); }
+
+/* ---- trade ---- */
+function renderTrade(){
+  const ps=$('tProd'); if(!ps) return;
+  if(!ps.options.length) ps.innerHTML = PRODUCTS.map(p=>`<option value="${p.code}">${p.name}</option>`).join('');
+  const area=+$('tArea').value||0;
+  const prod=PRODUCTS.find(p=>p.code===ps.value)||PRODUCTS[0];
+  const sorted=[...tiers].sort((a,b)=>a.min-b.min);
+  const tier=[...sorted].reverse().find(t=>area>=t.min)||sorted[0];
+  const c=unitCosting(prod, materials, tier.markup);
+  const units=Math.ceil(area/prod.face);
+  const revenue=units*c.price, cost=units*c.cost;
+
+  // what the same area would earn installed, for an honest comparison
+  const instMk=+$('tCompare').value||40;
+  const ci=unitCosting(prod, materials, instMk);
+  const supply=Math.ceil(area/prod.face)*ci.price;
+  const crew=crews[0], g=ground.find(x=>x.code==='NORMAL');
+  const days=Math.ceil(area/((crew.speed||35)*(g?g.speed:1)));
+  const labour=days*crew.size*crew.rate;
+  const instCost=labour + area*install.bed + area*install.base + install.trans;
+  const instRevenue=supply + instCost*(1+instMk/100);
+  const instProfit=instRevenue-(Math.ceil(area/prod.face)*ci.cost)-instCost;
+
+  $('tierBox').innerHTML=`
+    <div class="tot" style="margin-bottom:14px">
+      <div><div class="lbl">Trade order — ${tier.name}</div>
+        <div class="big">${M(revenue)}</div>
+        <div class="brk">${area} m² · ${units.toLocaleString('en-US')} pavers · ${M(c.price)} each · ${M(c.perM2)}/m²<br>
+        Cost to make <b>${M(cost)}</b> · Profit <b>${M(revenue-cost)}</b> at ${tier.markup}% mark-up<br>
+        Terms: ${tier.terms}</div></div>
+    </div>
+    <div class="alert ${revenue-cost > instProfit ? 'a-ok':'a-warn'}">
+      <b>Same ${area} m², two ways.</b><br>
+      · <b>Trade supply:</b> profit ${M(revenue-cost)}. No crew, no site, no weather. Yard keeps running.<br>
+      · <b>You install it:</b> profit about ${M(instProfit)} — but it ties up a crew for ${days} day${days>1?'s':''} and you carry the site risk.<br>
+      ${revenue-cost > instProfit
+        ? 'At this volume the trade order earns more <i>and</i> costs you nothing but production. Take it.'
+        : 'Installing earns more here — but only if you have a free crew. If the crew is busy, the trade order is pure extra.'}
+    </div>`;
+
+  $('tListRows').innerHTML = PRODUCTS.flatMap(pr =>
+    sorted.map(t=>{
+      const cc=unitCosting(pr, materials, t.markup);
+      return `<tr><td>${pr.name}</td><td><b>${t.name}</b></td><td class="num">${t.min}</td>
+        <td class="num">${M(cc.price)}</td><td class="num"><b>${M(cc.perM2)}</b></td><td class="mini">${t.terms}</td></tr>`;
+    })).join('');
+
+  $('tierEdit').innerHTML = sorted.map((t,i)=>`
+    <div class="mat">
+      <div><b>${t.name}</b><div class="mini">${t.terms}</div></div>
+      <div><label>From (m²)</label><input type="number" value="${t.min}" onchange="tiers[${i}].min=+this.value||0"></div>
+      <div><label>Mark-up %</label><input type="number" value="${t.markup}" onchange="tiers[${i}].markup=+this.value||0"></div>
+      <div class="mini" style="padding-bottom:12px">${M(unitCosting(PRODUCTS[0],materials,t.markup).perM2)}/m² on SQ200</div>
+    </div>`).join('');
+}
+function saveTiers(){ store.set('tms_tiers',tiers); renderTrade(); alert('Trade tiers saved.'); }
+['tArea','tProd','tCompare'].forEach(id=>{ const e=$(id); if(e){ e.addEventListener('input',renderTrade); e.addEventListener('change',renderTrade);} });
+
+fillCrewGround(); renderCrews(); renderGround(); renderTrade();
 renderLines(); renderMaterials(); renderPriceList(); renderInstall(); renderInstallSettings();
 
 /* show whether we are on the shared database or this device only */
