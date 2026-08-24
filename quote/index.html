@@ -1562,6 +1562,7 @@ function renderJobList(){
           </select>
           <button class="btn dgr sm" onclick="delJob(${i})">×</button></div>
       </div>
+      ${priceLine(i, j)}
       <div class="alert ${bad.length ? 'a-warn' : 'a-ok'}" style="margin:0">
         ${f.map(x=>`${x.ok?'✓':'✗'} <b>${x.name}:</b> ${x.detail}`).join('<br>')}
       </div>
@@ -1821,7 +1822,10 @@ function agingReport(){
 /* Finished jobs with no invoice against them. */
 const uninvoicedWork = () => jobs.filter(j=>j.status==='complete' && !invoices.some(i=>i.job_no===j.job_no));
 
+/* The job's price, which is the quote unless he has adjusted it on the job. Invoices
+   bill THIS, not the quote. */
 function jobValue(j){
+  if (j.price_override != null && !isNaN(j.price_override)) return +j.price_override;
   const q = quotes.find(x=>x.quote_no===j.quote_no);
   return q ? +q.total : 0;
 }
@@ -1986,10 +1990,14 @@ function docHead(kind, meta){
     <div><div class="kind">${kind}</div><div class="meta">${meta}</div></div>
   </div>`;
 }
-function docFoot(extra){
+/* Thulo, 24 Aug 2026: "SANS 1200MJ is for installation". The two standards cover
+   different things and must not be blurred — 1058:2021 is the paver, 1200MJ is the
+   laying. A supply-only document must not claim the installation standard at all. */
+function docFoot(withInstall, extra){
+  const std = 'Pavers manufactured to SANS 1058:2021, minimum 25 MPa.'
+            + (withInstall ? ' Installation to SANS 1200MJ.' : '');
   return `<div class="docfoot">${extra || ''}
-    ${CO.founded ? 'Paving Lesotho since ' + CO.founded + '. ' : ''}
-    Manufactured to SANS 1058:2021, minimum 25 MPa.<br>
+    ${CO.founded ? 'Paving Lesotho since ' + CO.founded + '. ' : ''}${std}<br>
     ${CO.name || ''}${CO.reg_no ? ' · Reg ' + CO.reg_no : ''}</div>`;
 }
 function showDoc(html){
@@ -2030,7 +2038,7 @@ function quoteDocHtml(q){
         This quotation is valid until ${dmy(valid)}. Prices are based on material costs at
         ${dmy(q.created)} and may change if input costs move before acceptance.<br>
         ${invCfg.depositPct ? invCfg.depositPct + '% deposit on acceptance, balance on completion.' : ''}</div>`
-    + docFoot();
+    + docFoot(!!insRow);
 }
 function printSavedQuote(i){ showDoc(quoteDocHtml(quotes[i])); }
 
@@ -2072,6 +2080,14 @@ function invoiceLines(inv){
             price:inv.subtotal, total:inv.subtotal }];
 }
 
+/* Does the work this invoice bills for include laying? Drives whether SANS 1200MJ
+   may be cited — see docFoot. */
+function invoiceIncludesInstall(inv){
+  const j = jobs.find(y=>y.job_no===inv.job_no);
+  const q = j && quotes.find(x=>x.quote_no===j.quote_no);
+  return !!(q && q.install && q.install.mode && q.install.mode !== 'none' && q.install.charge > 0);
+}
+
 function invoiceDocHtml(inv){
   const missing = invSettingsIncomplete();
   const paid = invPaid(inv), bal = invBalance(inv);
@@ -2106,9 +2122,77 @@ function invoiceDocHtml(inv){
           : '<b>[ bank details not set ]</b>'}<br>
         <span style="font-size:9.5pt">Please use <b>${inv.invoice_no}</b> as your reference.
         Payment due by ${dmy(inv.due)}.</span></div>`
-    + docFoot();
+    + docFoot(invoiceIncludesInstall(inv));
 }
 function printInvoice(i){ showDoc(invoiceDocHtml(invoices[i])); }
+
+
+/* ============ per-job price adjustment ============
+   Thulo, 24 Aug 2026: "On the job part, that's where I price when I need to increase
+   or decrease my pricing." So the quote's mark-up is the starting point, not the final
+   word — the job is where the real number is set. The quoted figure is never
+   overwritten, so the two can always be compared.
+
+   MARK-UP on cost (× 1.40), never margin — see the note on unitCosting. */
+const MARKUP_FLOOR = 30;   // mirrors settings.min_markup_pct in 002_roles_and_rls.sql
+
+function jobQuoted(j){ const q = quotes.find(x=>x.quote_no===j.quote_no); return q ? +q.total : 0; }
+function jobCost(j){
+  const q = quotes.find(x=>x.quote_no===j.quote_no);
+  if (!q) return 0;
+  const supply = q.lines.reduce((s,l)=>s + (+l.units||0) * (+l.unit_cost||0), 0);
+  return supply + ((q.install && +q.install.cost) || 0);
+}
+function jobMarkup(j){
+  const c = jobCost(j); if (!c) return null;
+  return (jobValue(j) - c) / c * 100;
+}
+/* A phone set to a comma-decimal locale renders 30000.00 as "30000,00", and plain
+   parseFloat would read that as 30000 and quietly lose the cents. Normalise first. */
+function parseMoney(v){
+  let t = String(v == null ? '' : v).replace(/[\s\u00a0]/g,'');
+  if (t.includes(',') && !t.includes('.')) t = t.replace(',', '.');   // comma is the decimal point
+  else t = t.replace(/,/g, '');                                       // comma is a thousands separator
+  const n = parseFloat(t);
+  return isNaN(n) ? null : n;
+}
+function setJobPrice(i, v){
+  const j = jobs[i], val = parseMoney(v);
+  j.price_override = val;                          // blank restores the quoted price
+  store.set('tms_jobs', jobs);
+  renderJobList(); renderToday();
+  if (typeof renderMoney === 'function') renderMoney();
+}
+function priceLine(i, j){
+  const quoted = jobQuoted(j), now = jobValue(j), cost = jobCost(j);
+  const mk = jobMarkup(j), diff = now - quoted;
+  let verdict, tone;
+  if (mk === null){ verdict = 'No cost on the quote to compare against.'; tone = 'a-ok'; }
+  else if (now <= cost){
+    tone = 'a-warn';
+    verdict = `<b>This is at or below what the job costs you to do (${M(cost)}).</b> `
+            + `You would be paying to work.`;
+  } else if (mk < MARKUP_FLOOR){
+    tone = 'a-warn';
+    verdict = `Mark-up <b>${mk.toFixed(1)}%</b> — below your ${MARKUP_FLOOR}% floor. `
+            + `Costs you ${M(cost)}, leaves ${M(now-cost)}.`;
+  } else {
+    tone = 'a-ok';
+    verdict = `Mark-up <b>${mk.toFixed(1)}%</b> · costs ${M(cost)}, leaves <b>${M(now-cost)}</b>.`;
+  }
+  return `<div class="alert ${tone}" style="margin:0">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:7px">
+        <div style="flex:1;min-width:150px"><label>Price for this job (M)</label>
+          <input type="number" step="100" value="${now.toFixed(2)}"
+                 onchange="setJobPrice(${i}, this.value)"></div>
+        <div class="mini" style="padding-bottom:12px">
+          Quoted ${M(quoted)}${Math.abs(diff) > 0.005
+            ? ` · <b>${diff > 0 ? 'up' : 'down'} ${M(Math.abs(diff))}</b>` : ' · unchanged'}
+          ${j.price_override != null
+            ? ` · <a href="#" onclick="setJobPrice(${i},''); return false;">back to quoted</a>` : ''}</div>
+      </div>
+      ${verdict}</div>`;
+}
 
 function addOverhead(){
   const n=$('oh_name').value.trim(); if(!n){alert('Name the cost.');return;}
