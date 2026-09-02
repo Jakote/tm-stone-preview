@@ -266,10 +266,11 @@ tr:last-child td{border-bottom:none}
   </div>
 
   <div class="card">
-    <h2>Pavers we actually have</h2>
-    <div class="sub">Made, already promised to jobs, and what is genuinely free to sell.</div>
+    <h2>Production against orders</h2>
+    <div class="sub">You make to order, not to stock — so this is not a stockpile. It is how
+      much of what you have promised is already poured, and how much is still to make.</div>
     <table><thead><tr><th>Product</th><th class="num">Made</th><th class="num">Promised</th>
-      <th class="num">Free</th><th class="num">Good out of the mould</th></tr></thead>
+      <th class="num">Still to make</th><th class="num">Good out of the mould</th></tr></thead>
       <tbody id="stockRows"></tbody></table>
     <div id="rejectCost"></div>
   </div>
@@ -930,7 +931,15 @@ function renderInstall(){
     $('groundNote').innerHTML = `<b>${_c.name}</b> (${_c.size} people, ${M(_c.size*_c.rate)}/day) on <b>${_g.name.split(' — ')[0]}</b> ground lays about <b>${eff.toFixed(0)} m² a day</b> — ${_g.why} ${_g.speed!==1?`Base prep ×${_g.prep}.`:''}`;
   }
   $('rateWarn').innerHTML = install.confirmed ? '' :
-    '<div class="alert a-warn"><b>Installation rates are still estimates.</b> Set your real crew size, day rate and laying speed under <b>Material Prices → Installation rates</b>, then tick "These are my real figures". Until then, do not send an installation price to a customer.</div>';
+    `<div class="alert a-warn"><b>Three of these numbers are still guesses, and they are the big ones.</b><br>
+       Your crew figures are now real (28 Aug): 3–4 men, M85–100 a day, 40–50 m² a day — labour on a
+       120 m² job works out at about M765.<br>
+       <b>Still invented, by MEND, not by you:</b> base preparation <b>${M(install.base)}/m²</b>,
+       bedding sand <b>${M(install.bed)}/m²</b>, transport <b>${M(install.trans)}/trip</b>.
+       On a 120 m² job those three make up roughly <b>88% of the installation price</b> —
+       so the quote is mostly built on figures you have never confirmed.<br>
+       <span class="mini">Tell Jakote what you actually pay for excavation and sub-base, for bedding
+       sand per m², and per trip to site. Until then do not send an installation price to a customer.</span></div>`;
 
   if (!area || mode === 'none'){
     $('iRows').innerHTML = '<tr><td colspan="6" class="mini" style="padding:16px 10px">'+
@@ -1016,7 +1025,14 @@ function saveInstall(){
 
 
 /* ============ CREWS · GROUND · TRADE ============ */
-const CREW_DEFAULTS = [{id:'c1',name:'Team A',size:4,rate:200,speed:35}];
+/* His real crews, 28 Aug: "3/4 men depending on the yard area", "85-100 per day
+   depending on the skills", "normally we pave 40-50 m2 per day". The placeholders these
+   replace (4 men, M200/day, 35 m2/day) overstated his labour cost by about 3x and
+   therefore overpriced every installation quote the system produced. */
+const CREW_DEFAULTS = [
+  {id:'c1', name:'Small crew (3)',   size:3, rate:85,  speed:50},
+  {id:'c2', name:'Full crew (4)',    size:4, rate:100, speed:45},
+];
 const GROUND_DEFAULTS = [
   {code:'EASY',   name:'Easy — flat, already compacted',     speed:1.30, prep:0.70, why:'Existing slab or well-compacted base.'},
   {code:'NORMAL', name:'Normal — level ground, ordinary soil',speed:1.00, prep:1.00, why:'Standard driveway or yard. The baseline.'},
@@ -1141,17 +1157,29 @@ function saveTiers(){ store.set('tms_tiers',tiers); renderTrade(); alert('Trade 
 const SETUP_DEFAULTS = {
   /* Names only, amounts 0. We do NOT invent his costs — these are prompts to fill in.
      Until they are filled, the system keeps using the figure off his own cost sheet. */
+  /* Thulo's actual figures, given on WhatsApp 28 Aug 2026. Ranges are entered at the
+     midpoint; he can move any of them and every price follows. */
   overheads: [
-    {name:'Yard rent',            cat:'fixed',     amt:0},
-    {name:'Electricity & water',  cat:'utilities', amt:0},
-    {name:'Yard staff wages',     cat:'labour',    amt:0},
-    {name:'Mixer & equipment servicing', cat:'equipment', amt:0},
-    {name:'Transport / diesel',   cat:'other',     amt:0},
-    {name:'Other running costs',  cat:'other',     amt:0}
+    {name:'Yard rent',                cat:'fixed',     amt:3000},
+    {name:'Electricity',              cat:'utilities', amt:200},
+    {name:'Water',                    cat:'utilities', amt:175},   // he said M100-250
+    {name:'Salaries',                 cat:'labour',    amt:12100}, // M15,000 with casuals
+    {name:'Transport / petrol',       cat:'other',     amt:4900},  // he said M4,800-5,000
   ],
-  cap:    { days:22, batches:2, yield:432 },   // 432 L = his batch yield, verified
+  /* 24 working days, 2 batches a day, 240 pavers a batch (his 28 Aug figures).
+     240 x 2.0 L = 480 L, where the Aug cost sheet implied 432 L / 216 pavers.
+     ⚠️ CONFIRM WITH HIM which is right — it moves every per-unit cost by ~10%. */
+  cap:    { days:24, batches:2, yield:480 },
   recipe: { cement:2.75, sand:220, stone:220, pigment:2.75 },
-  moulds: [],
+  /* Real mould prices, 28 Aug. He reports 200-300 pours on hexagon moulds with them
+     still in good condition, so 250 is used as the working life until he says otherwise.
+     Cavities matter: a 9-cavity mould makes 9 pavers a pour. */
+  moulds: [
+    {product:'SQ200',  cost:55,  pours:250},
+    {product:'HEX200', cost:55,  pours:250},
+    {product:'SQ100',  cost:161, pours:250, cavities:9},
+    {product:'BR220',  cost:91,  pours:250, cavities:3},
+  ],
   consts: { sandLoad:12, stoneT:1.6, pigBag:25, cemBag:50 },
   /* His published cost sheet (Aug 2026). Used until he captures his own figures,
      and kept afterwards so the two can be compared instead of one silently winning. */
@@ -1412,11 +1440,12 @@ function feasibility(j){
   const out = [];
   const free = unitsAvailable(j.code) + (+j.units||0);   // exclude this job's own claim
   const short = (+j.units||0) - free;
-  out.push({ name:'Pavers in stock', ok: short <= 0,
-    detail: short <= 0 ? 'Enough — '+Math.round(free).toLocaleString('en-US')+' free, this job needs '
-                          + (+j.units).toLocaleString('en-US')
-                       : 'Short by '+Math.round(short).toLocaleString('en-US')+' pavers — about '
-                          + (daysToProduce(j.code, short) ?? '?') + ' days of pouring to cover it' });
+  out.push({ name:'Time to make them', ok: true,
+    detail: short <= 0
+      ? 'Already poured — '+Math.round(free).toLocaleString('en-US')+' made against this order'
+      : Math.round(short).toLocaleString('en-US')+' pavers to pour, about '
+        + (daysToProduce(j.code, short) ?? '?') + ' working days at '
+        + setup.cap.batches + ' batches a day' });
 
   const crew = crews.find(c=>c.id===j.crew_id);
   const gr   = ground.find(g=>g.code===j.ground) || ground.find(g=>g.code==='NORMAL');
@@ -1482,8 +1511,8 @@ function renderToday(){
   let h = '';
   if (late.length) h += `<div class="alert a-warn"><b>${late.length} job${late.length>1?'s':''} past the promised date</b><br>`
     + late.map(j=>`${j.job_no} — ${j.customer}, promised ${j.promised_end} (${-daysBetween(today0(),j.promised_end)} days ago)`).join('<br>') + '</div>';
-  if (short.length) h += `<div class="alert a-warn" style="margin-top:10px"><b>Oversold</b><br>`
-    + short.map(x=>`${x.p.name}: promised ${Math.abs(Math.round(x.gap)).toLocaleString('en-US')} more than has been made — about ${daysToProduce(x.p.code, Math.abs(x.gap)) ?? '?'} days of pouring behind`).join('<br>') + '</div>';
+  if (short.length) h += `<div class="alert a-warn" style="margin-top:10px"><b>Still to pour</b><br>`
+    + short.map(x=>`${x.p.name}: ${Math.abs(Math.round(x.gap)).toLocaleString('en-US')} pavers promised and not yet made — about ${daysToProduce(x.p.code, Math.abs(x.gap)) ?? '?'} days of pouring`).join('<br>') + '</div>';
   h += `<div class="tot" style="margin-top:${h?'12px':'0'}">
       <div><div class="lbl">On site now</div><div class="big">${now.length}</div>
         <div class="brk">${now.map(j=>j.job_no+' · '+j.customer).join('<br>') || 'nothing on site'}</div></div>
@@ -1501,7 +1530,9 @@ function renderStock(){
     return `<tr><td>${p.name}</td>
       <td class="num">${made.toLocaleString('en-US')}</td>
       <td class="num">${prom.toLocaleString('en-US')}</td>
-      <td class="num" style="color:${free<0?'#a4342a':'inherit'};font-weight:${free<0?'700':'400'}">${free.toLocaleString('en-US')}</td>
+      <td class="num" style="color:${free<0?'#a4342a':'inherit'};font-weight:${free<0?'700':'400'}">${
+        free < 0 ? Math.abs(free).toLocaleString('en-US')
+                 : (prom ? '— all poured' : '—')}</td>
       <td class="num">${logged ? (y*100).toFixed(1)+'%' : '<span class="mini">no pours logged</span>'}</td></tr>`;
   }).join('');
 
