@@ -242,12 +242,13 @@ footer .r{margin-top:8px;font-size:11.5px;color:#6f665f}
 
       <div class="brk">
         <div class="br"><span>Pavers required</span><b id="units">—</b></div>
-        <div class="br"><span>Material per paver</span><b id="matp">—</b></div>
-        <div class="br"><span>Overhead per paver</span><b id="ohp">—</b></div>
-        <div class="br"><span>Mould depreciation</span><b id="mdp">—</b></div>
-        <div class="br tot"><span>Cost per paver</span><b id="costp">—</b></div>
-        <div class="br tot"><span>Selling price per paver</span><b id="sellp">—</b></div>
-        <div class="br"><span>Gross profit on this job</span><b id="profit" style="color:#7cc48d">—</b></div>
+        <div class="br"><span>Covers</span><b id="matp">—</b></div>
+        <div class="br tot"><span>Price per paver</span><b id="sellp">—</b></div>
+        <!-- Cost per paver, overhead, mould depreciation and gross profit were published
+             here. They are TM Stone's competitive position and were readable by anyone,
+             including competitors. Removed 2 Sept. The elements below stay hidden so the
+             existing calculator script can keep writing to them without erroring. -->
+        <div style="display:none"><b id="ohp"></b><b id="mdp"></b><b id="costp"></b><b id="profit"></b></div>
       </div>
 
       <div class="alert" id="alert"></div>
@@ -344,7 +345,7 @@ function calc(){
 
   $('mlbl').textContent = margin + '%';
   $('units').textContent = units.toLocaleString('en-US') + ' pavers';
-  $('matp').textContent  = M(matPer);
+  $('matp').textContent  = (1/prod.face).toFixed(0) + ' pavers per m\u00b2';
   $('ohp').textContent   = M(OVERHEAD);
   $('mdp').textContent   = M(MOULD);
   $('costp').textContent = M(costPer);

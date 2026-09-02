@@ -71,6 +71,11 @@ tr:last-child td{border-bottom:none}
 .mat .rowctl select,.mat .rowctl .btn{height:38px;display:flex;align-items:center}
 .chg{font-size:11.5px;font-weight:700}
 .up{color:var(--bad)}.down{color:var(--ok)}.same{color:var(--ink3)}
+/* SHOW_INTERNAL_COSTS === false puts .hide-internal on <body>. Anything carrying
+   .internal is TM Stone's own cost, margin, profit, mark-up or supplier price and
+   disappears from the screen AND from every printed document (this rule is outside
+   @media print on purpose, so one rule covers both). */
+body.hide-internal .internal{display:none!important}
 /* A printed quote or invoice is a DOCUMENT, not a screenshot of the app. It is
    rendered into #printDoc and printed alone, so no input boxes, tabs or buttons
    can end up on something a customer sees. */
@@ -139,7 +144,7 @@ tr:last-child td{border-bottom:none}
     <button class="tab" data-p="jobs">Jobs &amp; Yard</button>
     <button class="tab" data-p="stock">Stock</button>
     <button class="tab" data-p="money">Money</button>
-    <button class="tab" data-p="setup">My Costs</button>
+    <button class="tab internal" data-p="setup">My Costs</button>
     <button class="tab" data-p="trade">Trade Supply</button>
     <button class="tab" data-p="materials">Prices &amp; Rates</button>
   </div>
@@ -164,9 +169,9 @@ tr:last-child td{border-bottom:none}
 
   <div class="card noprint">
     <h2>Pricing</h2>
-    <div class="sub">Mark-up is applied to cost — TM Stone's own convention (cost × 1.40 = 40%)</div>
+    <div class="sub internal">Mark-up is applied to cost — TM Stone's own convention (cost × 1.40 = 40%)</div>
     <div class="g3">
-      <div><label>Mark-up %</label><input type="number" id="markup" value="40" min="0" step="1"></div>
+      <div class="internal"><label>Mark-up %</label><input type="number" id="markup" value="40" min="0" step="1"></div>
       <div><label>Wastage % (cuts &amp; breakage)</label><input type="number" id="wastage" value="5" min="0" step="1"></div>
       <div><label>Quote valid for (days)</label><input type="number" id="validdays" value="14" min="1" step="1"></div>
     </div>
@@ -219,7 +224,7 @@ tr:last-child td{border-bottom:none}
     </div>
 
     <table id="iCompare">
-      <thead><tr><th>Option</th><th>Basis</th><th class="num">You charge</th><th class="num">It costs you</th><th class="num">Profit</th><th class="num">Margin</th></tr></thead>
+      <thead><tr><th>Option</th><th>Basis</th><th class="num">You charge</th><th class="num internal">It costs you</th><th class="num internal">Profit</th><th class="num internal">Margin</th></tr></thead>
       <tbody id="iRows"></tbody>
     </table>
     <p class="mini" id="iNote" style="margin-top:11px"></p>
@@ -247,7 +252,7 @@ tr:last-child td{border-bottom:none}
     <h2>Saved quotes</h2>
     <div class="sub">Every quote stores the material prices it was built on</div>
     <table>
-      <thead><tr><th>Quote</th><th>Customer</th><th class="num">Total</th><th>Date</th><th>Status</th><th>Cost base</th><th></th></tr></thead>
+      <thead><tr><th>Quote</th><th>Customer</th><th class="num">Total</th><th>Date</th><th>Status</th><th class="internal">Cost base</th><th></th></tr></thead>
       <tbody id="savedRows"></tbody>
     </table>
   </div>
@@ -419,7 +424,7 @@ tr:last-child td{border-bottom:none}
 
 </div>
 
-<div class="page" id="p-setup">
+<div class="page internal" id="p-setup">
   <div class="alert a-ok" style="margin-bottom:14px">
     <b>Everything else in this system is calculated from what you enter here.</b>
     Nothing is fixed in the code. Change a number and every price, quote, price list and
@@ -546,7 +551,7 @@ tr:last-child td{border-bottom:none}
     <p class="mini" style="margin-top:10px">Prices ex-yard, collection by the buyer. Delivery quoted separately. Valid while material costs hold — reprint when cement moves.</p>
   </div>
 
-  <div class="card noprint">
+  <div class="card noprint internal">
     <h2>Trade tiers</h2>
     <div class="sub">Volume unlocks a better rate. Set the mark-up you are willing to give at each level.</div>
     <div id="tierEdit"></div>
@@ -556,7 +561,7 @@ tr:last-child td{border-bottom:none}
 
 <!-- ================= MATERIALS ================= -->
 <div class="page" id="p-materials">
-  <div class="card">
+  <div class="card internal">
     <h2>Material prices</h2>
     <div class="sub">Change a price here and every product, quote and price list updates immediately</div>
     <div id="matRows"></div>
@@ -567,7 +572,7 @@ tr:last-child td{border-bottom:none}
   </div>
 
 
-  <div class="card">
+  <div class="card internal">
     <h2>Crews</h2>
     <div class="sub">Your teams and what they cost. Add as many as you run.</div>
     <div id="crewRows"></div>
@@ -587,7 +592,7 @@ tr:last-child td{border-bottom:none}
     <button class="btn" style="margin-top:12px" onclick="saveGround()">Save ground factors</button>
   </div>
 
-  <div class="card">
+  <div class="card internal">
     <h2>Other installation costs</h2>
     <div class="sub">Per m² unless stated</div>
     <div class="g3">
@@ -605,12 +610,12 @@ tr:last-child td{border-bottom:none}
 
   <div class="card">
     <h2>Price list — all products</h2>
-    <div class="sub">At the current material prices and <span id="plMarkup">40</span>% mark-up</div>
+    <div class="sub internal">At the current material prices and <span id="plMarkup">40</span>% mark-up</div>
     <table>
-      <thead><tr><th>Product</th><th class="num">Per batch</th><th class="num">Material</th><th class="num">Cost</th><th class="num">Sell</th><th class="num">Per m²</th></tr></thead>
+      <thead><tr><th>Product</th><th class="num internal">Per batch</th><th class="num internal">Material</th><th class="num internal">Cost</th><th class="num">Sell</th><th class="num">Per m²</th></tr></thead>
       <tbody id="plRows"></tbody>
     </table>
-    <p class="mini" style="margin-top:12px">Overhead M1.0341 and mould depreciation M0.1200 per unit are carried from the SQ200 batch model. Confirm these for other sizes before quoting large trade volumes.</p>
+    <p class="mini internal" style="margin-top:12px">Overhead M1.0341 and mould depreciation M0.1200 per unit are carried from the SQ200 batch model. Confirm these for other sizes before quoting large trade volumes.</p>
   </div>
 </div>
 
@@ -634,6 +639,42 @@ const PRODUCTS = [
   { code:'BR220', name:'220 × 110 × 50 mm Brick',  litres:1.21, face:0.0242 },
   { code:'HEX200',name:'Hexagon 200 × 50 mm',      litres:1.30, face:0.026  },
 ];
+/* ══════════════════════════════════════════════════════════════════════════
+   SHOW_INTERNAL_COSTS — the single switch that makes this page safe to share.
+
+   true  (how it ships today, nothing changes for Thulo or Jakote):
+         the full owner's view — cost per paver, material/overhead/mould
+         breakdown, gross profit, mark-up %, installation cost/profit/margin,
+         supplier prices, the whole "My Costs" capture screen, the trade
+         mark-up tiers and the cost-drift banners.
+
+   false: every one of those figures disappears — from the screen AND from
+         anything printed. What is left still works end to end: prices, the
+         quote builder, saved quotes, jobs, production, stock, deliveries and
+         invoicing. The arithmetic is untouched; only the display changes.
+
+   WHY IT EXISTS. https://jakote.github.io/tm-stone-preview/quote/ is a PUBLIC
+   URL. As it stands, it publishes TM Stone's material cost per paver, overhead
+   per paver, mould depreciation, total cost, gross profit and the prices he
+   pays his suppliers — his competitive position — to anyone with the link.
+   Flipping this one line to false makes the page safe to hand to a contractor.
+
+   It is deliberately left true: Thulo has not been asked yet, so nothing of
+   his has been deleted. Ask him, then decide.
+
+   LIMIT, stated honestly: this hides the figures from the rendered page and
+   from print. The underlying numbers still live in this file's JavaScript, so
+   someone who opens "view source" can still read the cost model. Making the
+   page genuinely safe against that means removing the figures from the source
+   — which needs his consent — or serving them from behind a login.
+   ══════════════════════════════════════════════════════════════════════════ */
+const SHOW_INTERNAL_COSTS = true;
+
+/* ic(html) emits internal-only markup — nothing at all when the switch is off.
+   Static blocks use the .internal CSS class instead; both are driven by the
+   one constant above. */
+const ic = html => SHOW_INTERNAL_COSTS ? html : '';
+
 const LS_MAT='tms_materials', LS_Q='tms_quotes';
 const $=id=>document.getElementById(id);
 const M=n=>'M'+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -650,6 +691,32 @@ const store = {
     catch(e){ console.warn('Storage unavailable — this session will not persist.'); return false; }
   }
 };
+
+/* ---------- document numbering ----------
+   Quote, job and invoice numbers used to be `array.length + 1`. Save two quotes,
+   delete the first, save a third and two different customers both hold TMS-0002.
+   It also breaks the Supabase import: quotes.quote_no and invoices.invoice_no are
+   `text unique not null`.
+
+   The counter is STORED and only ever increases. It is never derived from the
+   length of an array, so deleting a record cannot hand its number to the next one.
+   Numbers may therefore have gaps — that is correct, a gap is a deleted document.
+
+   Migration: on the first call the stored counter is lifted above the highest
+   number already issued in the existing records, so saved quotes/jobs/invoices
+   keep the numbers their customers already have. The same max() runs on every
+   call, so a restored backup or an imported record can never collide either. */
+const SEQ_KEYS = { quote:'tms_seq_quote', job:'tms_seq_job', invoice:'tms_seq_invoice' };
+const trailingNo = v => { const m = String(v == null ? '' : v).match(/(\d+)\s*$/); return m ? parseInt(m[1], 10) : 0; };
+function seqNext(kind, records, field){
+  const key = SEQ_KEYS[kind];
+  let n = parseInt(store.get(key, 0), 10) || 0;
+  const highestIssued = (records || []).reduce((max, r) => Math.max(max, trailingNo(r && r[field])), 0);
+  if (highestIssued > n) n = highestIssued;      // seed above what is already out there
+  n += 1;
+  store.set(key, n);
+  return n;
+}
 
 let materials = store.get(LS_MAT, null) || {...BASE};
 let quotes    = store.get(LS_Q, []);
@@ -727,7 +794,7 @@ function renderLines(){
   const profit=total-cost;
   $('qbrk').innerHTML =
     `${area.toFixed(1)} m² · ${units.toLocaleString('en-US')} pavers · incl. ${wast}% wastage<br>`+
-    `Cost to make <b>${M(cost)}</b> · Gross profit <b>${M(profit)}</b> (${(profit/total*100).toFixed(1)}% of price)<br>`+
+    ic(`Cost to make <b>${M(cost)}</b> · Gross profit <b>${M(profit)}</b> (${(profit/total*100).toFixed(1)}% of price)<br>`)+
     `Average <b>${M(total/(area||1))}</b> per m²` +
     (ins.mode!=='none' ? `<br>Installation (${ins.mode.replace('_',' ')}): <b>${M(ins.charge)}</b>` : '<br>Supply only — installation not included');
   checkDrift();
@@ -737,8 +804,10 @@ function renderLines(){
 
 /* ---------- drift warning on the quoting screen ---------- */
 function checkDrift(){
-  const d=((batchCost(materials)-batchCost(BASE))/batchCost(BASE))*100;
   const b=$('driftBanner');
+  // The drift banner is a statement about his input costs. Not for a shared page.
+  if(!SHOW_INTERNAL_COSTS){ b.innerHTML=''; return; }
+  const d=((batchCost(materials)-batchCost(BASE))/batchCost(BASE))*100;
   if(Math.abs(d)<0.05){ b.innerHTML=''; return; }
   b.innerHTML = d>0
     ? `<div class="alert a-warn"><b>⚠ Material costs are ${d.toFixed(1)}% above the August baseline.</b>
@@ -764,9 +833,11 @@ function saveQuote(){
   // so a saved — and printed — quote could be thousands of Maloti short of what he quoted.
   const ins = currentInstall();
   total += ins.charge;
-  const n=quotes.length+1;
+  // ONE number, issued once, used for the record and for the message — never two
+  // copies of the same expression that could drift apart.
+  const quote_no = 'TMS-' + String(seqNext('quote', quotes, 'quote_no')).padStart(4,'0');
   quotes.unshift({
-    quote_no:'TMS-'+String(n).padStart(4,'0'),
+    quote_no,
     customer:$('cname').value.trim(), phone:$('cphone').value.trim(),
     type:$('ctype').value, site:$('csite').value.trim(),
     markup, wastage:wast, lines:ql, total,
@@ -776,7 +847,7 @@ function saveQuote(){
     valid_days:+$('validdays').value||14
   });
   store.set(LS_Q, quotes);
-  alert('Saved as TMS-'+String(n).padStart(4,'0'));
+  alert('Saved as ' + quote_no);
   renderSaved();
 }
 function newQuote(){ lines=[]; ['cname','cphone','csite','ldesc'].forEach(i=>$(i).value=''); renderLines(); }
@@ -811,7 +882,7 @@ function renderSaved(){
       <td class="num"><b>${M(q.total)}</b></td>
       <td>${new Date(q.created).toLocaleDateString('en-ZA')}</td>
       <td><span class="pill p-${q.status}">${q.status}</span></td>
-      <td><span class="chg ${cls}" title="${moved.map(k=>k+': '+M(q.cost_basis[k])+' → '+M(materials[k])).join(' · ')}">
+      <td class="internal"><span class="chg ${cls}" title="${moved.map(k=>k+': '+M(q.cost_basis[k])+' → '+M(materials[k])).join(' · ')}">
           ${arrow} ${Math.abs(drift)<=0.05 ? 'cost unchanged'
             : moved.join(', ').toLowerCase()+' moved · cost '+M(costThen)+' → '+M(costNow)}</span></td>
       <td class="noprint" style="white-space:nowrap">
@@ -821,7 +892,8 @@ function renderSaved(){
         <button class="btn dgr sm" onclick="delQuote(${i})">Delete</button>
       </td></tr>`;
   }).join('');
-  sw.innerHTML = stale
+  sw.innerHTML = !SHOW_INTERNAL_COSTS ? ''
+    : stale
     ? `<div class="alert a-warn"><b>⚠ ${stale} quote${stale>1?'s are':' is'} still out at an old cost base.</b>
         Your input costs have moved since ${stale>1?'they were':'it was'} priced. If ${stale>1?'they are':'it is'} accepted as-is,
         you absorb roughly <b>${M(exposure)}</b>. Re-issue, or accept the hit knowingly — but do not be surprised by it.</div>`
@@ -872,8 +944,8 @@ function renderPriceList(tmp){
   $('plRows').innerHTML=PRODUCTS.map(prod=>{
     const c=unitCosting(prod,p,markup);
     return `<tr><td><b>${prod.code}</b><div class="mini">${prod.name}</div></td>
-      <td class="num">${Math.round(c.perBatch).toLocaleString('en-US')}</td>
-      <td class="num">${M(c.material)}</td><td class="num">${M(c.cost)}</td>
+      <td class="num internal">${Math.round(c.perBatch).toLocaleString('en-US')}</td>
+      <td class="num internal">${M(c.material)}</td><td class="num internal">${M(c.cost)}</td>
       <td class="num"><b>${M(c.price)}</b></td><td class="num"><b>${M(c.perM2)}</b></td></tr>`;
   }).join('');
 }
@@ -928,9 +1000,10 @@ function renderInstall(){
   const _c = (typeof currentCrew==='function') ? currentCrew() : null;
   if ($('groundNote') && _g && _c){
     const eff = (_c.speed||35)*(_g.speed||1);
-    $('groundNote').innerHTML = `<b>${_c.name}</b> (${_c.size} people, ${M(_c.size*_c.rate)}/day) on <b>${_g.name.split(' — ')[0]}</b> ground lays about <b>${eff.toFixed(0)} m² a day</b> — ${_g.why} ${_g.speed!==1?`Base prep ×${_g.prep}.`:''}`;
+    $('groundNote').innerHTML = `<b>${_c.name}</b> (${_c.size} people${ic(', '+M(_c.size*_c.rate)+'/day')}) on <b>${_g.name.split(' — ')[0]}</b> ground lays about <b>${eff.toFixed(0)} m² a day</b> — ${_g.why} ${_g.speed!==1?`Base prep ×${_g.prep}.`:''}`;
   }
-  $('rateWarn').innerHTML = install.confirmed ? '' :
+  // The banner quotes his base-prep, bedding and transport rates, so it is internal too.
+  $('rateWarn').innerHTML = (!SHOW_INTERNAL_COSTS || install.confirmed) ? '' :
     `<div class="alert a-warn"><b>Three of these numbers are still guesses, and they are the big ones.</b><br>
        Your crew figures are now real (28 Aug): 3–4 men, M85–100 a day, 40–50 m² a day — labour on a
        120 m² job works out at about M765.<br>
@@ -953,12 +1026,12 @@ function renderInstall(){
   $('iRows').innerHTML = rows.map(r=>{
     const on = r.mode === mode;
     return `<tr style="${on?'background:#fdf6f2':''}">
-      <td><b>${r.label}</b>${r.mode===best.mode?' <span class="pill p-accepted">best</span>':''}${on?' <span class="pill p-sent">chosen</span>':''}</td>
+      <td><b>${r.label}</b>${ic(r.mode===best.mode?' <span class="pill p-accepted">best</span>':'')}${on?' <span class="pill p-sent">chosen</span>':''}</td>
       <td class="mini">${r.basis}</td>
       <td class="num"><b>${M(r.charge)}</b></td>
-      <td class="num">${M(r.cost)}</td>
-      <td class="num">${M(r.profit)}</td>
-      <td class="num">${r.margin.toFixed(1)}%</td></tr>`;
+      <td class="num internal">${M(r.cost)}</td>
+      <td class="num internal">${M(r.profit)}</td>
+      <td class="num internal">${r.margin.toFixed(1)}%</td></tr>`;
   }).join('');
 
   const extra = best.profit - rows.find(r=>r.mode==='per_m2').profit;
@@ -970,7 +1043,7 @@ function renderInstall(){
   const over = 2 * dayCost;
   const perM2 = rows.find(r=>r.mode==='per_m2'), perDay = rows.find(r=>r.mode==='per_day'), perJob = rows.find(r=>r.mode==='per_job');
 
-  $('iNote').innerHTML =
+  $('iNote').innerHTML = !SHOW_INTERNAL_COSTS ? '' :
     `Cost breakdown: ${c.days} day${c.days>1?'s':''} · labour ${M(c.labour)} · bedding ${M(c.cons)}`+
     (c.base? ' · base prep '+M(c.base):'')+` · transport ${M(c.trans)}.`+
     (best.mode!=='per_m2' && extra>1
@@ -1120,17 +1193,17 @@ function renderTrade(){
       <div><div class="lbl">Trade order — ${tier.name}</div>
         <div class="big">${M(revenue)}</div>
         <div class="brk">${area} m² · ${units.toLocaleString('en-US')} pavers · ${M(c.price)} each · ${M(c.perM2)}/m²<br>
-        Cost to make <b>${M(cost)}</b> · Profit <b>${M(revenue-cost)}</b> at ${tier.markup}% mark-up<br>
+        ${ic(`Cost to make <b>${M(cost)}</b> · Profit <b>${M(revenue-cost)}</b> at ${tier.markup}% mark-up<br>`)}
         Terms: ${tier.terms}</div></div>
     </div>
-    <div class="alert ${revenue-cost > instProfit ? 'a-ok':'a-warn'}">
+    ${ic(`<div class="alert ${revenue-cost > instProfit ? 'a-ok':'a-warn'}">
       <b>Same ${area} m², two ways.</b><br>
       · <b>Trade supply:</b> profit ${M(revenue-cost)}. No crew, no site, no weather. Yard keeps running.<br>
       · <b>You install it:</b> profit about ${M(instProfit)} — but it ties up a crew for ${days} day${days>1?'s':''} and you carry the site risk.<br>
       ${revenue-cost > instProfit
         ? 'At this volume the trade order earns more <i>and</i> costs you nothing but production. Take it.'
         : 'Installing earns more here — but only if you have a free crew. If the crew is busy, the trade order is pure extra.'}
-    </div>`;
+    </div>`)}`;
 
   $('tListRows').innerHTML = PRODUCTS.flatMap(pr =>
     sorted.map(t=>{
@@ -1364,11 +1437,13 @@ function renderShare(){
 }
 
 function shareNumbers(){
+  if (!SHOW_INTERNAL_COSTS){ alert('Not available on a shared copy of this page.'); return; }
   if (setupIsEmpty()){ alert('Fill in your monthly running costs first — there is nothing to send yet.'); return; }
   window.open('https://wa.me/'+JAKOTE_WA+'?text='+encodeURIComponent(numbersSummary()), '_blank');
 }
 
 function backupSetup(){
+  if (!SHOW_INTERNAL_COSTS){ alert('Not available on a shared copy of this page.'); return; }
   const blob = new Blob([JSON.stringify({saved:new Date().toISOString(), setup, materials}, null, 2)],
                         {type:'application/json'});
   const a = document.createElement('a');
@@ -1537,7 +1612,7 @@ function renderStock(){
   }).join('');
 
   const withRuns = PRODUCTS.filter(p=>runsFor(p.code).some(r=>+r.reject>0));
-  $('rejectCost').innerHTML = withRuns.length ? withRuns.map(p=>{
+  $('rejectCost').innerHTML = (SHOW_INTERNAL_COSTS && withRuns.length) ? withRuns.map(p=>{
     const t = trueCost(p.code, 40);
     return `<div class="alert a-warn" style="margin-top:14px">
       <b>${p.name}: breakages are costing you ${M(t.extra)} on every paver you sell.</b><br>
@@ -1582,7 +1657,7 @@ function addJob(){
   const q = quotes.find(x=>x.quote_no===qno);
   const line = q.lines[0];
   jobs.unshift({
-    job_no: 'JOB-' + String(jobs.length+1).padStart(3,'0'),
+    job_no: 'JOB-' + String(seqNext('job', jobs, 'job_no')).padStart(3,'0'),
     quote_no: q.quote_no, customer: q.customer, site: q.site || '',
     code: line.code, area: q.lines.reduce((s,l)=>s + (+l.area||0), 0),
     units: q.lines.reduce((s,l)=>s + (+l.units||0), 0),
@@ -1737,10 +1812,11 @@ function renderStockPage(){
       <td class="num">${c.needed.toFixed(1)} ${STOCK_UNITS[c.code]}</td>
       <td class="num">${c.onHand.toFixed(1)}</td>
       <td class="num" style="color:${c.short>0?'#a4342a':'inherit'};font-weight:${c.short>0?'700':'400'}">
-        ${c.short > 0 ? c.short.toFixed(1)+' — '+M(c.short*pricePerStockUnit(c.code))+' to buy' : '—'}</td></tr>`).join('');
+        ${c.short > 0 ? c.short.toFixed(1)+ic(' — '+M(c.short*pricePerStockUnit(c.code))+' to buy') : '—'}</td></tr>`).join('');
 
   const code = $('d_mat').value, qty = +$('d_qty').value, paid = +$('d_paid').value;
-  $('d_hint').innerHTML = (qty>0 && paid>0)
+  // The hint compares what he just paid with what he is currently pricing at — supplier prices.
+  $('d_hint').innerHTML = (SHOW_INTERNAL_COSTS && qty>0 && paid>0)
     ? (function(){
         const nu = paid/qty, ou = pricePerStockUnit(code);
         const pct = ou ? (nu-ou)/ou*100 : 0;
@@ -1752,11 +1828,11 @@ function renderStockPage(){
     : `Quantity in <b>${STOCK_UNITS[code]}</b>, and the total on the invoice.`;
 
   $('deliveryRows').innerHTML = deliveries.length
-    ? `<table><thead><tr><th>Date</th><th>Material</th><th class="num">Qty</th><th class="num">Paid</th>
-        <th class="num">Per unit</th><th>Invoice</th><th></th></tr></thead><tbody>`
+    ? `<table><thead><tr><th>Date</th><th>Material</th><th class="num">Qty</th><th class="num internal">Paid</th>
+        <th class="num internal">Per unit</th><th>Invoice</th><th></th></tr></thead><tbody>`
       + deliveries.slice(0,10).map((d,i)=>`<tr><td>${d.date}</td><td>${MAT_NAMES[d.code]}</td>
-        <td class="num">${d.qty} ${STOCK_UNITS[d.code]}</td><td class="num">${M(d.paid)}</td>
-        <td class="num">${M(d.paid/(d.qty||1))}</td><td class="mini">${d.inv||''}</td>
+        <td class="num">${d.qty} ${STOCK_UNITS[d.code]}</td><td class="num internal">${M(d.paid)}</td>
+        <td class="num internal">${M(d.paid/(d.qty||1))}</td><td class="mini">${d.inv||''}</td>
         <td><button class="btn dgr sm" onclick="delDelivery(${i})">×</button></td></tr>`).join('')
       + '</tbody></table>'
     : '<p class="mini">No deliveries booked in yet.</p>';
@@ -1965,7 +2041,7 @@ function raiseInvoice(){
   const terms = +$('i_terms').value || invCfg.terms;
   const due = new Date(Date.now() + terms*86400000).toISOString().slice(0,10);
   invoices.unshift({
-    invoice_no: invCfg.prefix + String(invoices.length+1).padStart(4,'0'),
+    invoice_no: invCfg.prefix + String(seqNext('invoice', invoices, 'invoice_no')).padStart(4,'0'),
     job_no: j.job_no, customer: j.customer, site: j.site || '',
     kind: $('i_kind').value, pct, issued: today0(), due,
     subtotal: sub, vat, total: sub + vat,
@@ -2291,7 +2367,8 @@ function priceLine(i, j){
     tone = 'a-ok';
     verdict = `Mark-up <b>${mk.toFixed(1)}%</b> · costs ${M(cost)}, leaves <b>${M(now-cost)}</b>.`;
   }
-  return `<div class="alert ${tone}" style="margin:0">
+  // The price input keeps working; only the cost/mark-up verdict is internal.
+  return `<div class="alert ${SHOW_INTERNAL_COSTS ? tone : 'a-ok'}" style="margin:0">
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:7px">
         <div style="flex:1;min-width:150px"><label>Price for this job (M)</label>
           <input type="text" inputmode="decimal" value="${now.toFixed(2)}"
@@ -2302,7 +2379,7 @@ function priceLine(i, j){
           ${j.price_override != null
             ? ` · <a href="#" onclick="setJobPrice(${i},''); return false;">back to quoted</a>` : ''}</div>
       </div>
-      ${verdict}</div>`;
+      ${ic(verdict)}</div>`;
 }
 
 function addOverhead(){
@@ -2330,6 +2407,10 @@ function resetSetup(){ setup=JSON.parse(JSON.stringify(SETUP_DEFAULTS)); store.s
 
 fillCrewGround(); renderCrews(); renderGround(); renderSetup(); renderTrade(); renderJobsPage(); renderStockPage(); renderMoney();
 renderLines(); renderMaterials(); renderPriceList(); renderInstall(); renderInstallSettings();
+
+/* The switch, applied. Everything marked .internal — static or generated — is
+   hidden from the screen and from print in one place. */
+if (!SHOW_INTERNAL_COSTS) document.body.classList.add('hide-internal');
 
 /* show whether we are on the shared database or this device only */
 (function(){
