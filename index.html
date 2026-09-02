@@ -39,8 +39,32 @@ nav a.nl:hover{background:rgba(255,255,255,.08);color:#fff}
 .ncta:hover{background:var(--ac2)}
 .ham{display:none;background:none;border:none;color:#fff;font-size:23px;cursor:pointer}
 
-.hero{position:relative;min-height:74vh;display:grid;align-items:center;color:#fff;
- background:linear-gradient(rgba(28,24,22,.62),rgba(28,24,22,.72)),url('assets/work-1.jpg') center/cover}
+.hero{position:relative;min-height:84vh;display:grid;align-items:center;color:#fff;overflow:hidden;
+ background:#1c1816}
+/* The hero is built for video. Drop his footage in at assets/hero.mp4 and the <video>
+   takes over automatically; until then these three stills cross-fade with a slow push,
+   which reads as motion rather than a static photograph. */
+.hero-bed{position:absolute;inset:0;z-index:0}
+.hero-bed figure{position:absolute;inset:0;margin:0;background-size:cover;background-position:center;
+ opacity:0;animation:heroCycle 21s infinite;will-change:transform,opacity}
+.hero-bed figure:nth-child(1){background-image:url('assets/work-1.jpg');animation-delay:0s}
+.hero-bed figure:nth-child(2){background-image:url('assets/work-4.jpg');animation-delay:7s}
+.hero-bed figure:nth-child(3){background-image:url('assets/work-6.jpg');animation-delay:14s}
+@keyframes heroCycle{
+  0%   {opacity:0; transform:scale(1.04)}
+  6%   {opacity:1}
+  30%  {opacity:1}
+  36%  {opacity:0}
+  100% {opacity:0; transform:scale(1.14)}
+}
+.hero video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.hero-veil{position:absolute;inset:0;z-index:1;
+ background:linear-gradient(rgba(28,24,22,.58),rgba(28,24,22,.78))}
+.hero .w{position:relative;z-index:2}
+@media(prefers-reduced-motion:reduce){
+  .hero-bed figure{animation:none}
+  .hero-bed figure:nth-child(1){opacity:1}
+}
 .hero-in{padding:90px 0}
 .kick{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.2em;background:var(--ac);padding:6px 14px;border-radius:4px;margin-bottom:20px}
 .hero h1{font-size:clamp(36px,6.5vw,68px);font-weight:700;line-height:.98;margin-bottom:16px;max-width:16ch}
@@ -108,6 +132,31 @@ footer .r{margin-top:8px;font-size:11.5px;color:#6f665f}
 
 @media(max-width:900px){.calc{grid-template-columns:1fr}.specs-g{grid-template-columns:1fr 1fr}.svc,.gal{grid-template-columns:1fr 1fr}.gp.wide{grid-column:span 2}.cta{grid-template-columns:1fr}}
 @media(max-width:600px){nav ul{display:none;position:fixed;top:60px;left:0;right:0;background:var(--stone);flex-direction:column;padding:14px;align-items:stretch;text-align:center}nav ul.open{display:flex}.ham{display:block}.svc,.gal{grid-template-columns:1fr}.row2{grid-template-columns:1fr}}
+
+/* Motion, kept honest. CONTENT IS NEVER HIDDEN BY JAVASCRIPT.
+   The reveal is a pure-CSS scroll-driven animation: browsers that support
+   animation-timeline get the motion, everything else simply shows the page. There is no
+   state in which a failed script leaves a customer looking at a blank section. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .calc-sec, .gal .gp, .svc .sc, .specs-g > div, section h2 {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+    @keyframes rise { from { opacity:0; transform:translateY(24px) } to { opacity:1; transform:none } }
+  }
+}
+.specs-g > div{transition:transform .35s ease}
+.specs-g > div:hover{transform:translateY(-4px)}
+.gal .gp{overflow:hidden}
+.gal .gp img{transition:transform .9s cubic-bezier(.2,.7,.3,1);display:block}
+.gal .gp:hover img{transform:scale(1.06)}
+.btn{transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
+.btn:hover{transform:translateY(-2px)}
+@media(prefers-reduced-motion:reduce){
+  .gal .gp:hover img,.specs-g > div:hover,.btn:hover{transform:none}
+}
 </style>
 </head>
 <body>
@@ -125,7 +174,14 @@ footer .r{margin-top:8px;font-size:11.5px;color:#6f665f}
   <button class="ham" onclick="document.getElementById('nm').classList.toggle('open')">☰</button>
 </div></nav>
 
-<header class="hero"><div class="w hero-in">
+<header class="hero">
+  <!-- Swap in his footage: save it as assets/hero.mp4 and uncomment. Nothing else changes.
+  <video autoplay muted loop playsinline poster="assets/work-1.jpg">
+    <source src="assets/hero.mp4" type="video/mp4">
+  </video> -->
+  <div class="hero-bed" aria-hidden="true"><figure></figure><figure></figure><figure></figure></div>
+  <div class="hero-veil" aria-hidden="true"></div>
+  <div class="w hero-in">
   <div class="kick">MASERU · LESOTHO</div>
   <h1>Paving that holds up</h1>
   <p>Paving Lesotho since 2020. We manufacture our own wetcast pavers and lay them ourselves — from a single driveway to a commercial forecourt. Made to SANS 1058:2021, minimum 25 MPa, ±2 mm tolerance.</p>
@@ -314,6 +370,47 @@ function calc(){
   $(id).addEventListener('input', calc); $(id).addEventListener('change', calc);
 });
 calc();
+</script>
+
+<script>
+/* The spec numbers count up once when they first come into view. If this script never
+   runs, the numbers are already correct in the HTML — nothing depends on it. */
+(function(){
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var els = [].slice.call(document.querySelectorAll('.specs-g .v'));
+  if (!els.length) return;
+  function run(){
+    els = els.filter(function(el){
+      var r = el.getBoundingClientRect();
+      if (r.top > window.innerHeight - 40 || r.bottom < 0) return true;
+      countUp(el);
+      return false;
+    });
+    if (!els.length) window.removeEventListener('scroll', onScroll);
+  }
+  var ticking = false;
+  function onScroll(){
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function(){ run(); ticking = false; });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  run();
+
+  function countUp(el){
+    var m = el.textContent.trim().match(/^(\D*)(\d+)(.*)$/);
+    if (!m) return;
+    var pre = m[1], end = parseInt(m[2], 10), post = m[3], t0 = null;
+    function step(ts){
+      if (!t0) t0 = ts;
+      var k = Math.min((ts - t0) / 900, 1);
+      el.textContent = pre + Math.round(end * (1 - Math.pow(1 - k, 3))) + post;
+      if (k < 1) requestAnimationFrame(step);
+      else el.textContent = pre + end + post;
+    }
+    requestAnimationFrame(step);
+  }
+})();
 </script>
 </body>
 </html>
