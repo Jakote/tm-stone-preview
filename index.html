@@ -230,21 +230,7 @@ footer .r{margin-top:8px;font-size:11.5px;color:#6f665f}
         <option value="HEX200" data-l="1.30">Hexagon 200 × 50 mm</option>
       </select>
 
-      <div class="row2">
-        <div>
-          <label>Cement (M / 50 kg bag)</label>
-          <input type="number" id="cement" value="130" min="50" step="5">
-        </div>
-        <div>
-          <label>Pigment (M / 25 kg)</label>
-          <input type="number" id="pigment" value="1600" min="0" step="50">
-        </div>
-      </div>
-
-      <label>Mark-up on cost — <span id="mlbl">40%</span></label>
-      <input type="range" id="margin" min="20" max="60" value="40" step="1">
-
-      <div class="mini">Sand M2 800 / 12 m³ and stone M434.26 / ton are held at your current supply rates. Overhead M1.0341 and mould depreciation M0.1200 per unit come from your SQ200 batch model.</div>
+      <div class="mini">Prices are for supply from the yard, held at current material rates. Installation, base preparation, edging and transport are quoted per site after a measure-up.</div>
     </div>
 
     <div class="out">
@@ -256,9 +242,10 @@ footer .r{margin-top:8px;font-size:11.5px;color:#6f665f}
         <div class="br tot"><span>Price per paver</span><b id="sellp">—</b></div>
         <!-- Cost per paver, overhead, mould depreciation and gross profit were published
              here. They are TM Stone's competitive position and were readable by anyone,
-             including competitors. Removed 2 Sept. The elements below stay hidden so the
-             existing calculator script can keep writing to them without erroring. -->
-        <div style="display:none"><b id="ohp"></b><b id="mdp"></b><b id="costp"></b><b id="profit"></b></div>
+             including competitors. The rows went on 2 September; the cost model itself was
+             still in the page source and in the copy until 10 September, when this page was
+             cited as evidence in a government submission and the whole model was replaced
+             with a published price list. The yard's costing belongs behind a login. -->
       </div>
 
       <div class="alert" id="alert"></div>
@@ -316,68 +303,41 @@ footer .r{margin-top:8px;font-size:11.5px;color:#6f665f}
 </div></footer>
 
 <script>
-// ---- TM Stone's real cost model (from paver_cost_analysis) ----
-// Batch: 2.75 bags cement + 220L sand + 220L stone + 2.75kg pigment
-// Verified: SQ200 -> 216 pavers/batch, material M3.4152/paver  (737.69/216 = 3.4152 ✓)
-const BATCH = { cementBags:2.75, sandL:220, stoneL:220, pigmentKg:2.75, yieldL:432 };
-const SAND_PER_12M3 = 2800, STONE_PER_TON = 434.26;
-const OVERHEAD = 1.0341, MOULD = 0.1200;      // per paver, from their SQ200 model
-const BASE_CEMENT = 130, BASE_PIGMENT = 1600; // their current input prices
+// ---- Published price list ----
+// Selling prices per paver at TM Stone's current rates, matching the M159.93/m2 he publishes
+// for the SQ200. The yard's cost model — batch recipe, supplier rates, overhead, mould wear —
+// is deliberately NOT in this page. It is his competitive position and it belongs in the
+// costing app behind a login, not in a public marketing site anyone can view-source.
+const PRICE = {            // M per paver, supply only
+  SQ200:  6.3971,
+  SQ100:  2.8111,
+  BR220:  4.5085,
+  HEX200: 4.7236
+};
 
 const $ = id => document.getElementById(id);
 const M = n => 'M' + n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 
-function batchCost(cementPrice, pigmentPrice){
-  const cement  = BATCH.cementBags * cementPrice;
-  const sand    = (BATCH.sandL/1000) / 12 * SAND_PER_12M3;      // 220L of a 12m³ load
-  const stone   = (BATCH.stoneL/1000) * 1.6 * STONE_PER_TON;    // ~1.6 t/m³
-  const pigment = (BATCH.pigmentKg/25) * pigmentPrice;
-  return cement + sand + stone + pigment;
-}
-
 function calc(){
-  const area   = Math.max(1, +$('area').value || 0);
-  const opt    = $('ptype').selectedOptions[0];
-  const litres = +opt.dataset.l;
-  const margin = +$('margin').value;
-  const cementP  = +$('cement').value  || BASE_CEMENT;
-  const pigmentP = +$('pigment').value || BASE_PIGMENT;
+  const area = Math.max(1, +$('area').value || 0);
+  const opt  = $('ptype').selectedOptions[0];
+  const code = opt.value;
 
-  const perBatch = BATCH.yieldL / litres;              // pavers from one batch
-  const matPer   = batchCost(cementP, pigmentP) / perBatch;
-  const costPer  = matPer + OVERHEAD + MOULD;
-  const sellPer  = costPer * (1 + margin/100);   // mark-up on cost — matches their published M6.3971 @40%
-
-  // pavers per m² from the face dimensions encoded in the label
-  const face = { SQ200:0.04, SQ100:0.01, BR220:0.0242, HEX200:0.026 }[opt.value];
+  const sellPer = PRICE[code];
+  const face = { SQ200:0.04, SQ100:0.01, BR220:0.0242, HEX200:0.026 }[code];
   const units = Math.ceil(area / face);
   const total = units * sellPer;
 
-  $('mlbl').textContent = margin + '%';
   $('units').textContent = units.toLocaleString('en-US') + ' pavers';
-  $('matp').textContent  = (1/prod.face).toFixed(0) + ' pavers per m\u00b2';
-  $('ohp').textContent   = M(OVERHEAD);
-  $('mdp').textContent   = M(MOULD);
-  $('costp').textContent = M(costPer);
+  $('matp').textContent  = (1/face).toFixed(0) + ' pavers per m\u00b2';
   $('sellp').textContent = M(sellPer);
   $('total').firstChild.textContent = M(total);
-  $('persqm').textContent = M(total/area) + ' per m² · ' + margin + '% mark-up';
-  $('profit').textContent = M(total - units*costPer);
+  $('persqm').textContent = M(total/area) + ' per m\u00b2';
 
-  // the CRITICAL risk from their own financial matrix, made visible
-  const baseCost = batchCost(BASE_CEMENT, BASE_PIGMENT)/perBatch + OVERHEAD + MOULD;
-  const drift = ((costPer - baseCost)/baseCost)*100;
-  const a = $('alert');
-  if (Math.abs(drift) < 0.05){
-    a.innerHTML = '<b>Input prices at your current rates.</b> Move the cement price above and every quote on this page re-prices instantly — that is the difference between quoting today\'s cost and last month\'s.';
-  } else if (drift > 0){
-    a.innerHTML = '<b>⚠ Cost up ' + drift.toFixed(1) + '% on your baseline.</b> Any quote still out at the old price is losing you ' +
-      M((costPer-baseCost)*units) + ' on a job this size. This is the raw-material volatility your own risk matrix rates <b>Critical</b>.';
-  } else {
-    a.innerHTML = '<b>Cost down ' + Math.abs(drift).toFixed(1) + '% on your baseline.</b> Room to sharpen a quote and still hold ' + margin + '% mark-up — or bank the extra ' + M((baseCost-costPer)*units) + ' on a job this size.';
-  }
+  $('alert').innerHTML = '<b>Indicative supply price.</b> Every job is measured on site before '
+    + 'a firm quote — ground conditions, edging and access change what a driveway actually costs.';
 }
-['area','ptype','margin','cement','pigment'].forEach(id=>{
+['area','ptype'].forEach(id=>{
   $(id).addEventListener('input', calc); $(id).addEventListener('change', calc);
 });
 calc();
