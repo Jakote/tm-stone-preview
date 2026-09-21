@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>TM Stone Solutions — Wetcast Paving, Maseru</title>
+<link rel="preload" as="image" href="assets/hero-1.webp" type="image/webp" fetchpriority="high">
 <meta name="robots" content="noindex,nofollow"><!-- private preview for TM Stone -->
 <meta name="description" content="TM Stone Solutions (Pty) Ltd — wetcast paving manufacture and installation in Maseru, Lesotho. SANS 1058:2021 compliant, 25 MPa.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect rx='0' width='100' height='100' fill='%23c2532a'/><text x='50' y='68' font-size='52' font-weight='bold' text-anchor='middle' fill='white' font-family='sans-serif'>TM</text></svg>">
@@ -61,19 +62,20 @@ nav a.nl:hover{background:rgba(255,255,255,.08);color:#fff}
 
 .hero{position:relative;min-height:84vh;display:grid;align-items:center;color:#fff;overflow:hidden;
  background:#1c1816}
-/* The hero is built for video. Drop his footage in at assets/hero.mp4 and the <video>
-   takes over automatically; until then these three stills cross-fade with a slow push,
-   which reads as motion rather than a static photograph. */
+/* The hero is three of Thulo's own drone photographs, cross-fading with a slow push.
+   This replaced a phone video on 21 Sept: the footage was 848x478 handheld in flat
+   light, and these stills are sharper, lighter and better lit. Motion without the
+   quality cost. */
 .hero-bed{position:absolute;inset:0;z-index:0}
-/* The video is the hero now. The stills stay underneath as the fallback for a browser that
-   will not autoplay, for reduced-motion, and for the moment before the file arrives. */
-.hero video.hero-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
-@media (prefers-reduced-motion: reduce){ .hero video.hero-vid{display:none} }
+
 .hero-bed figure{position:absolute;inset:0;margin:0;background-size:cover;background-position:center;
  opacity:0;animation:heroCycle 21s infinite;will-change:transform,opacity}
-.hero-bed figure:nth-child(1){background-image:url('assets/work-1.jpg');animation-delay:0s}
-.hero-bed figure:nth-child(2){background-image:url('assets/work-4.jpg');animation-delay:7s}
-.hero-bed figure:nth-child(3){background-image:url('assets/work-6.jpg');animation-delay:14s}
+.hero-bed figure:nth-child(1){background-image:url('assets/hero-1.jpg');
+  background-image:image-set(url('assets/hero-1.webp') type('image/webp'),url('assets/hero-1.jpg') type('image/jpeg'));animation-delay:0s}
+.hero-bed figure:nth-child(2){background-image:url('assets/hero-2.jpg');
+  background-image:image-set(url('assets/hero-2.webp') type('image/webp'),url('assets/hero-2.jpg') type('image/jpeg'));animation-delay:7s}
+.hero-bed figure:nth-child(3){background-image:url('assets/hero-3.jpg');
+  background-image:image-set(url('assets/hero-3.webp') type('image/webp'),url('assets/hero-3.jpg') type('image/jpeg'));animation-delay:14s}
 @keyframes heroCycle{
   0%   {opacity:0; transform:scale(1.04)}
   6%   {opacity:1}
@@ -81,7 +83,6 @@ nav a.nl:hover{background:rgba(255,255,255,.08);color:#fff}
   36%  {opacity:0}
   100% {opacity:0; transform:scale(1.14)}
 }
-.hero video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
 .hero-veil{position:absolute;inset:0;z-index:2;
  background:linear-gradient(rgba(28,24,22,.58),rgba(28,24,22,.78))}
 .hero .w{position:relative;z-index:3}
@@ -204,16 +205,6 @@ footer .r{margin-top:8px;font-size:11.5px;color:#8d8178}
 </div></nav>
 
 <header class="hero">
-  <!-- His own footage: a six-second silent loop of a finished job, cut from the clip he sent
-       on 2 July. Phones get the 199KB file, everything else the 1.7MB one. preload is
-       "metadata" rather than "none" because "none" and autoplay contradict each other - the
-       browser obeyed "do not load" and the hero sat on the poster. The poster still paints
-       first, so nothing is ever blank. -->
-  <video class="hero-vid" autoplay muted loop playsinline preload="metadata"
-         poster="assets/lot-hero-poster.jpg" aria-hidden="true">
-    <source src="assets/lot-hero-small.mp4" type="video/mp4" media="(max-width: 768px)">
-    <source src="assets/lot-hero.mp4" type="video/mp4">
-  </video>
   <div class="hero-bed" aria-hidden="true"><figure></figure><figure></figure><figure></figure></div>
   <div class="hero-veil" aria-hidden="true"></div>
   <div class="w hero-in">
