@@ -1264,29 +1264,29 @@ function saveTiers(){ store.set('tms_tiers',tiers); renderTrade(); alert('Trade 
 const SETUP_DEFAULTS = {
   /* Names only, amounts 0. We do NOT invent his costs — these are prompts to fill in.
      Until they are filled, the system keeps using the figure off his own cost sheet. */
-  /* Thulo's actual figures, given on WhatsApp 28 Aug 2026. Ranges are entered at the
-     midpoint; he can move any of them and every price follows. */
+  /* PUBLISHED COPY — amounts deliberately blank.
+     TM Stone's real overheads are commercially confidential and this page is served
+     from a public repository, so they are not shipped here. They are prompts to fill
+     in; anything entered is stored in the owner's own browser and never published.
+     Until they are filled the system uses the single aggregate figure off his own
+     cost sheet (see `sheet` below), which is what the fallback at derivedOverhead()
+     is for. */
   overheads: [
-    {name:'Yard rent',                cat:'fixed',     amt:3000},
-    {name:'Electricity',              cat:'utilities', amt:200},
-    {name:'Water',                    cat:'utilities', amt:175},   // he said M100-250
-    {name:'Salaries',                 cat:'labour',    amt:12100}, // M15,000 with casuals
-    {name:'Transport / petrol',       cat:'other',     amt:4900},  // he said M4,800-5,000
+    {name:'Yard rent',                cat:'fixed',     amt:0},
+    {name:'Electricity',              cat:'utilities', amt:0},
+    {name:'Water',                    cat:'utilities', amt:0},
+    {name:'Salaries',                 cat:'labour',    amt:0},
+    {name:'Transport / petrol',       cat:'other',     amt:0},
   ],
   /* 24 working days, 2 batches a day, 240 pavers a batch (his 28 Aug figures).
      240 x 2.0 L = 480 L, where the Aug cost sheet implied 432 L / 216 pavers.
      ⚠️ CONFIRM WITH HIM which is right — it moves every per-unit cost by ~10%. */
   cap:    { days:24, batches:2, yield:480 },
   recipe: { cement:2.75, sand:220, stone:220, pigment:2.75 },
-  /* Real mould prices, 28 Aug. He reports 200-300 pours on hexagon moulds with them
-     still in good condition, so 250 is used as the working life until he says otherwise.
-     Cavities matter: a 9-cavity mould makes 9 pavers a pour. */
-  moulds: [
-    {product:'SQ200',  cost:55,  pours:250},
-    {product:'HEX200', cost:55,  pours:250},
-    {product:'SQ100',  cost:161, pours:250, cavities:9},
-    {product:'BR220',  cost:91,  pours:250, cavities:3},
-  ],
+  /* PUBLISHED COPY — mould prices and wear life are supplier terms and are not
+     shipped here for the same reason. Add a mould in the app and the real wear takes
+     over; until then derivedMould() uses the cost-sheet figure. */
+  moulds: [],
   consts: { sandLoad:12, stoneT:1.6, pigBag:25, cemBag:50 },
   /* His published cost sheet (Aug 2026). Used until he captures his own figures,
      and kept afterwards so the two can be compared instead of one silently winning. */
