@@ -9,6 +9,8 @@ order matters.
 | | |
 |---|---|
 | Domain | **Not registered.** `tmstone.co.ls` has no NS and no A record, re-checked 21 Sept. M220/year at Zeecom |
+| DNS | **Zone live in Cloudflare**, Free plan, 5 records already in place, all grey-cloud |
+| Nameservers | `irma.ns.cloudflare.com` · `micah.ns.cloudflare.com` — give these to the registrar at checkout |
 | Hosting | GitHub Pages, repo `Jakote/tm-stone-preview`, public |
 | Live at | `https://jakote.github.io/tm-stone-preview/` |
 | Indexed | **No, on purpose.** `noindex,nofollow` on both pages |
@@ -42,19 +44,26 @@ at `tmstone.co.ls` rather than at the address the site is actually served from t
    M220, this year and every year, before ordering. Full research in `DOMAIN-REGISTRATION.md`.
    *This is the one step I cannot do: it needs an account and a card.*
 
-2. **In Cloudflare, add the records.** Apex `tmstone.co.ls`, four A records — these are the
-   live values, re-resolved from `jakote.github.io` on 21 September, not quoted from memory:
+2. ~~**In Cloudflare, add the records.**~~ **DONE, 21 September.** The zone is created on the
+   Free plan and all five records are in, verified in the dashboard — 5 of 200 used, every one
+   showing **DNS only**:
    ```
-   185.199.108.153
-   185.199.109.153
-   185.199.110.153
-   185.199.111.153
+   A      tmstone.co.ls   185.199.108.153   DNS only
+   A      tmstone.co.ls   185.199.109.153   DNS only
+   A      tmstone.co.ls   185.199.110.153   DNS only
+   A      tmstone.co.ls   185.199.111.153   DNS only
+   CNAME  www             jakote.github.io  DNS only
    ```
-   and `www` as a CNAME to `jakote.github.io`.
-   **Set the proxy to DNS-only (grey cloud) for now.** Orange-cloud proxying in front of
-   GitHub Pages breaks Pages' own certificate issuance until the cert exists.
-   *Delegation to Cloudflare is proven on this TLD, not assumed — `zeecom.co.ls` and the
-   regulator's own `lca.org.ls` both resolve to Cloudflare nameservers today.*
+   The four IPs were re-resolved from `jakote.github.io` rather than quoted from memory. Grey
+   cloud is deliberate: orange-cloud proxying in front of GitHub Pages blocks its certificate
+   from issuing. Cloudflare will show a banner asking you to turn proxying on — ignore it until
+   the certificate exists.
+   Nothing resolves yet and nothing will until the domain is registered and delegated. These
+   records sit inert until then, which is the point: the moment delegation lands, the site works.
+   *Note: the Cloudflare dashboard's "Connect your domain" form is broken for `.co.ls` — it
+   throws `Error checking domains` and never submits. The zone was created through Cloudflare's
+   own API from the signed-in dashboard. If you ever need to add another `.ls` zone, expect the
+   form to hang.*
 
 3. **`git mv CNAME.pending CNAME`** and push. Then Settings → Pages → Custom domain →
    `tmstone.co.ls`, and tick **Enforce HTTPS** once the certificate issues (usually under an
