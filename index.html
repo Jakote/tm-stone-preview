@@ -23,8 +23,11 @@
   --ink:#261813;        /* on-surface     */
   --ink2:#594138;       /* on-surface-variant */
   --ink3:#8d7166;       /* outline        */
-  --ac:#f26522;         /* primary-container — the vivid action orange */
-  --ac2:#a63b00;        /* primary — darker, for hover and depth */
+  --ac:#f26522;         /* DECORATION ONLY. 3.15:1 on white, 3.00:1 on --sand — it fails
+                           WCAG AA for text at every size. Use it for focus rings, range
+                           accents and fills that carry no words. */
+  --ac2:#a63b00;        /* TEXT-SAFE ORANGE. 6.47:1 on white, 6.16:1 on --sand. Anything
+                           that is text, or sits behind text, uses this one. */
   --ok:#2D6A4F;         /* success-green  */
   --warn:#FF7A3D;       /* caution-orange */
   --r:0;                /* sharp. Every corner. The system is explicit about this. */
@@ -40,19 +43,19 @@ h2,h3{font-weight:700}
    calculator is an instrument rather than a marketing widget. */
 .mono,.num,#total,#sellp,#units,#matp,#persqm{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
 
-.bar{background:var(--ac);color:#fff;text-align:center;font-size:12px;padding:8px 14px;font-weight:500}
+.bar{background:var(--ac2);color:#fff;text-align:center;font-size:12px;padding:8px 14px;font-weight:500}
 .bar a{color:#fff;font-weight:700}
 
 nav{position:sticky;top:0;z-index:60;background:rgba(43,39,37,.97);backdrop-filter:blur(10px)}
 .nb{max-width:1140px;margin:0 auto;padding:0 clamp(16px,4vw,36px);height:60px;display:flex;align-items:center;justify-content:space-between}
 .lg{display:flex;align-items:center;gap:10px;text-decoration:none;color:#fff}
-.lg-m{width:36px;height:36px;border-radius:0;background:var(--ac);display:grid;place-items:center;font-family:'Montserrat',sans-serif;font-weight:700;font-size:17px}
+.lg-m{width:36px;height:36px;border-radius:0;background:var(--ac2);display:grid;place-items:center;font-family:'Montserrat',sans-serif;font-weight:700;font-size:17px}
 .lg b{font-family:'Montserrat',sans-serif;font-size:19px;display:block;line-height:1}
 .lg span{font-size:10px;color:#8c939a;letter-spacing:.16em}
 nav ul{display:flex;gap:2px;list-style:none;align-items:center}
 nav a.nl{color:#c9cfd5;text-decoration:none;font-size:13px;font-weight:500;padding:8px 13px;border-radius:0}
 nav a.nl:hover{background:rgba(255,255,255,.08);color:#fff}
-.ncta{background:var(--ac);color:#fff!important;font-family:'Montserrat',sans-serif;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:10px 18px;border-radius:0;text-decoration:none;font-size:12px}
+.ncta{background:var(--ac2);color:#fff!important;font-family:'Montserrat',sans-serif;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:10px 18px;border-radius:0;text-decoration:none;font-size:12px}
 .ncta:hover{background:var(--ac2)}
 .ham{display:none;background:none;border:none;color:#fff;font-size:23px;cursor:pointer}
 
@@ -87,12 +90,12 @@ nav a.nl:hover{background:rgba(255,255,255,.08);color:#fff}
   .hero-bed figure:nth-child(1){opacity:1}
 }
 .hero-in{padding:90px 0}
-.kick{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.2em;background:var(--ac);padding:6px 14px;border-radius:0;margin-bottom:20px}
+.kick{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.2em;background:var(--ac2);padding:6px 14px;border-radius:0;margin-bottom:20px}
 .hero h1{font-size:clamp(36px,6.5vw,68px);font-weight:700;line-height:.98;margin-bottom:16px;max-width:16ch}
 .hero p{font-size:clamp(15px,1.6vw,18px);color:#e6ddd4;max-width:54ch;line-height:1.7;margin-bottom:28px}
 .hb{display:flex;gap:11px;flex-wrap:wrap}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:15px 28px;border-radius:0;font-weight:700;font-size:13.5px;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;border:none;cursor:pointer;font-family:'Montserrat',sans-serif;transition:.18s}
-.b1{background:var(--ac);color:#fff}
+.b1{background:var(--ac2);color:#fff}
 .b1:hover{background:var(--ac2);box-shadow:5px 5px 0 rgba(18,20,22,.22)}
 .b2{color:#fff;border:2px solid rgba(255,255,255,.85)}
 .b2:hover{background:#fff;color:var(--stone)}
@@ -103,7 +106,7 @@ nav a.nl:hover{background:rgba(255,255,255,.08);color:#fff}
 .specs .k{font-size:10.5px;color:#a2968c;letter-spacing:.11em;margin-top:5px;text-transform:uppercase}
 
 section{padding:clamp(56px,9vh,88px) 0}
-.lbl{font-size:11px;font-weight:700;letter-spacing:.2em;color:var(--ac);margin-bottom:10px}
+.lbl{font-size:11px;font-weight:700;letter-spacing:.2em;color:var(--ac2);margin-bottom:10px}
 .tit{font-size:clamp(28px,4.2vw,44px);font-weight:700;line-height:1.05;margin-bottom:14px}
 .dsc{font-size:15px;color:var(--ink2);max-width:58ch;line-height:1.75}
 
@@ -121,14 +124,14 @@ input[type=number]:focus,select:focus{border-color:var(--ac)}
 input[type=range]{width:100%;accent-color:var(--ac);margin-top:6px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
 .out{background:var(--stone);border:1px solid var(--slate);border-radius:0;padding:26px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
-.big{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:clamp(34px,5.4vw,52px);font-weight:700;color:var(--ac);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.big{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:clamp(34px,5.4vw,52px);font-weight:700;color:var(--ac2);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .big small{display:block;font-family:'Inter';font-size:12px;font-weight:500;color:#9aa1a8;text-transform:none;letter-spacing:0;margin-top:5px}
 .brk{margin-top:18px;border-top:1px solid var(--slate);padding-top:14px}
 .br{display:flex;justify-content:space-between;padding:9px 0;font-size:13px;color:#aeb4ba}
 .br span{font-family:'Inter',sans-serif}
 .br b{color:#fff;font-weight:500;font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
 .br.tot{border-top:1px solid var(--slate);margin-top:10px;padding-top:13px;font-size:15px}
-.br.tot b{color:var(--ac)}
+.br.tot b{color:var(--ac2)}
 .alert{margin-top:16px;background:rgba(201,138,23,.13);border:1px solid rgba(201,138,23,.4);border-radius:0;padding:13px 15px;font-size:12.5px;line-height:1.6;color:#e8d5ae}
 .alert b{color:#f3d79a}
 .mini{font-size:11.5px;color:#8d8279;margin-top:12px;line-height:1.6}
@@ -143,21 +146,21 @@ input[type=range]{width:100%;accent-color:var(--ac);margin-top:6px}
 /* services */
 .svc{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:32px}
 .sc{background:#fff;border:1px solid var(--line);border-radius:0;padding:24px}
-.sc h3{font-size:19px;margin-bottom:8px;color:var(--ac)}
+.sc h3{font-size:19px;margin-bottom:8px;color:var(--ac2)}
 .sc p{font-size:13.5px;color:var(--ink2);line-height:1.7}
 
-.cta{background:var(--ac);color:#fff;border-radius:0;padding:clamp(28px,5vw,46px);display:grid;grid-template-columns:1.3fr auto;gap:26px;align-items:center;margin-bottom:40px}
+.cta{background:var(--ac2);color:#fff;border-radius:0;padding:clamp(28px,5vw,46px);display:grid;grid-template-columns:1.3fr auto;gap:26px;align-items:center;margin-bottom:40px}
 .cta h2{font-size:clamp(24px,3.4vw,34px);margin-bottom:8px}
 .cta p{font-size:14px;color:#ffe2d6;line-height:1.7}
-.cta .b1{background:#fff;color:var(--ac)}
+.cta .b1{background:#fff;color:var(--ac2)}
 .cta .b1:hover{background:#ffe9e2}
 
 footer{background:var(--stone);color:#9aa1a8;padding:34px 0;font-size:12.5px;text-align:center}
 footer a{color:var(--ac2);text-decoration:none;font-weight:600}
-footer .r{margin-top:8px;font-size:11.5px;color:#6f665f}
+footer .r{margin-top:8px;font-size:11.5px;color:#8d8178}
 
 @media(max-width:900px){.calc{grid-template-columns:1fr}.specs-g{grid-template-columns:1fr 1fr}.svc,.gal{grid-template-columns:1fr 1fr}.gp.wide{grid-column:span 2}.cta{grid-template-columns:1fr}}
-@media(max-width:600px){nav ul{display:none;position:fixed;top:60px;left:0;right:0;background:var(--stone);flex-direction:column;padding:14px;align-items:stretch;text-align:center}nav ul.open{display:flex}.ham{display:block}.svc,.gal{grid-template-columns:1fr}.row2{grid-template-columns:1fr}}
+@media(max-width:600px){.gp.wide{grid-column:span 1}nav ul{display:none;position:fixed;top:60px;left:0;right:0;background:var(--stone);flex-direction:column;padding:14px;align-items:stretch;text-align:center}nav ul.open{display:flex}.ham{display:block}.svc,.gal{grid-template-columns:1fr}.row2{grid-template-columns:1fr}}
 
 /* Motion, kept honest. CONTENT IS NEVER HIDDEN BY JAVASCRIPT.
    The reveal is a pure-CSS scroll-driven animation: browsers that support
