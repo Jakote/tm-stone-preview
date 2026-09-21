@@ -8,7 +8,7 @@ order matters.
 
 | | |
 |---|---|
-| Domain | **Not registered.** `tmstone.co.ls` verified available at LSNIC — "No record found", no NS records |
+| Domain | **Not registered.** `tmstone.co.ls` has no NS and no A record, re-checked 21 Sept. M220/year at Zeecom |
 | Hosting | GitHub Pages, repo `Jakote/tm-stone-preview`, public |
 | Live at | `https://jakote.github.io/tm-stone-preview/` |
 | Indexed | **No, on purpose.** `noindex,nofollow` on both pages |
@@ -31,14 +31,35 @@ at `tmstone.co.ls` rather than at the address the site is actually served from t
 
 ## The go-live sequence
 
-1. **Register `tmstone.co.ls`.** I cannot do this — it takes a payment instrument and an
-   account. See `DOMAIN-REGISTRATION.md` for who sells it, what it costs and what Thulo needs
-   to produce.
-2. **Point DNS at GitHub Pages.** Four A records on the apex:
-   `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
-   and a CNAME on `www` → `jakote.github.io`.
-3. **`git mv CNAME.pending CNAME`** and push. Then Settings → Pages → Custom domain, and
-   tick **Enforce HTTPS** once the certificate issues (usually under an hour, up to 24).
+1. **Register `tmstone.co.ls` — M220/year at Zeecom, `my.zeecom.co.ls`.** Online, card, same
+   day. No Lesotho company needed, no documents, no registration number: LSNIC policy §3.1 is
+   "any natural person, company or organization". At the order screen, set the nameservers to
+   the **Cloudflare** pair for the new zone (create the zone in Cloudflare first, free tier, so
+   you have the pair to paste). Doing it at order time means every later DNS change happens in
+   Cloudflare and you never touch the registrar portal again.
+   **Register it to TM Stone as registrant, MEND as technical contact only** — the registrant
+   holds the transfer rights and gets the renewal notices. And agree in writing who pays the
+   M220, this year and every year, before ordering. Full research in `DOMAIN-REGISTRATION.md`.
+   *This is the one step I cannot do: it needs an account and a card.*
+
+2. **In Cloudflare, add the records.** Apex `tmstone.co.ls`, four A records — these are the
+   live values, re-resolved from `jakote.github.io` on 21 September, not quoted from memory:
+   ```
+   185.199.108.153
+   185.199.109.153
+   185.199.110.153
+   185.199.111.153
+   ```
+   and `www` as a CNAME to `jakote.github.io`.
+   **Set the proxy to DNS-only (grey cloud) for now.** Orange-cloud proxying in front of
+   GitHub Pages breaks Pages' own certificate issuance until the cert exists.
+   *Delegation to Cloudflare is proven on this TLD, not assumed — `zeecom.co.ls` and the
+   regulator's own `lca.org.ls` both resolve to Cloudflare nameservers today.*
+
+3. **`git mv CNAME.pending CNAME`** and push. Then Settings → Pages → Custom domain →
+   `tmstone.co.ls`, and tick **Enforce HTTPS** once the certificate issues (usually under an
+   hour, up to 24).
+
 4. **Verify the certificate and the redirect** before touching anything else. `https://tmstone.co.ls`
    must load with a valid certificate and `www` must land on the apex.
 5. **Only then, open the index.** Delete the `noindex,nofollow` line in `index.html` (it is
@@ -63,6 +84,8 @@ at `tmstone.co.ls` rather than at the address the site is actually served from t
   which is one of the four questions sent to Thulo on 21 September. Publishing his prices to
   Google before he has confirmed them, and before he has said he wants them public at all, is
   his decision and not mine.
-- **No email on the domain.** Cloudflare Email Routing would give `info@tmstone.co.ls`
-  forwarding to his existing inbox for R0, but that requires the domain to use Cloudflare
-  nameservers, which is a choice to make at registration rather than after.
+- **No email on the domain yet.** Once the zone is on Cloudflare, Email Routing gives
+  `info@tmstone.co.ls` forwarding into his existing inbox for R0 — two MX records and a TXT,
+  added in the same dashboard. Worth doing the same day, because an email address on his own
+  domain is the cheapest credibility a trade business can buy. It is a separate step and it
+  needs his say-so on which inbox it forwards to.
