@@ -1,0 +1,7 @@
+# TM Stone Solutions
+# While this is a preview, the page itself also carries noindex,nofollow.
+# At go-live: delete the two Disallow lines below and the meta tag in index.html.
+User-agent: *
+Disallow: /
+
+Sitemap: https://tmstone.co.ls/sitemap.xml

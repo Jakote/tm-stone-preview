@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Only the home page. /quote/ is deliberately excluded and stays noindex: it is a
+     price calculator whose numbers are still unconfirmed with Thulo (the two calculators
+     disagree on batch yield, 432 vs 480). Add it here once he has confirmed the figures
+     and agreed he wants his prices public. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://tmstone.co.ls/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>
