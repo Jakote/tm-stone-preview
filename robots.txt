@@ -1,6 +1,6 @@
 # TM Stone Solutions
-# While this is a preview, the page itself also carries noindex,nofollow.
-# At go-live: delete the two Disallow lines below and the meta tag in index.html.
+# Closed while the site is a preview. The pages carry noindex,nofollow as well.
+# At go-live, replace the Disallow below with:  Allow: /   and   Disallow: /quote/
 User-agent: *
 Disallow: /
 
