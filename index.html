@@ -213,6 +213,44 @@ footer .r{margin-top:8px;font-size:11.5px;color:#8d8178}
 @media(prefers-reduced-motion:reduce){
   .gal .gp:hover img,.specs-g > div:hover,.btn:hover{transform:none}
 }
+
+/* ---- 22 September: proof first, and a phone number that never scrolls away ----
+   The gallery now sits above the calculator. A customer judges a paver by the work,
+   not by a price they cannot yet contextualise. The hero drops its spec sentence on
+   phones because the spec bar repeats it verbatim two hundred pixels below. */
+@media(max-width:600px){
+  .sm-hide{display:none}
+  .hb{gap:10px}
+  .hb .btn{flex:1 1 100%;justify-content:center}
+  body{padding-bottom:64px}
+
+  /* Getting the work above the fold. Before this, the first photograph sat 403px
+     below the fold on a 812px screen: a customer had to scroll half a screen past
+     the hero, the spec bar and a section heading before seeing any paving. The
+     headline, the hero and the gallery preamble each give up a little. */
+  .hero{min-height:60vh}
+  .hero-in{padding-block:40px}
+  .hero h1{font-size:30px;margin-bottom:12px}
+  .hero p{margin-bottom:20px}
+  section{padding-block:34px}
+  #work .lbl{margin-bottom:6px}
+  #work .tit{font-size:24px;margin-bottom:8px}
+  #work .dsc{font-size:14px;margin-bottom:16px}
+}
+.callbar{display:none}
+@media(max-width:600px){
+  .callbar{
+    display:grid;grid-template-columns:1fr 1fr;gap:1px;
+    position:fixed;left:0;right:0;bottom:0;z-index:60;
+    background:rgba(255,255,255,.14);
+    padding-bottom:env(safe-area-inset-bottom, 0px);
+  }
+  .cb{display:flex;align-items:center;justify-content:center;min-height:52px;
+      font-family:'Montserrat',sans-serif;font-weight:700;font-size:13.5px;
+      letter-spacing:.06em;text-transform:uppercase;text-decoration:none}
+  .cb1{background:var(--ac2);color:#fff}
+  .cb2{background:var(--stone);color:#fff}
+}
 </style>
 <script type="application/ld+json">
 {
@@ -289,10 +327,10 @@ footer .r{margin-top:8px;font-size:11.5px;color:#8d8178}
   <div class="w hero-in">
   <div class="kick">MASERU · LESOTHO</div>
   <h1>Paving that holds up</h1>
-  <p>Paving Lesotho since 2020. We manufacture our own wetcast pavers and lay them ourselves — from a single driveway to a commercial forecourt. Made to SANS 1058:2021, minimum 25 MPa, ±2 mm tolerance.</p>
+  <p>Paving Lesotho since 2020. We manufacture our own wetcast pavers and lay them ourselves.<span class="sm-hide"> From a single driveway to a commercial forecourt, made to SANS 1058:2021, minimum 25 MPa, ±2 mm tolerance.</span></p>
   <div class="hb">
-    <a href="#calc" class="btn b1">Price my paving →</a>
-    <a href="#work" class="btn b2">See our work</a>
+    <a href="#work" class="btn b1">See our work →</a>
+    <a href="#calc" class="btn b2">Price my paving</a>
   </div>
 </div></header>
 
@@ -303,6 +341,28 @@ footer .r{margin-top:8px;font-size:11.5px;color:#8d8178}
   <div><div class="v">Since 2020</div><div class="k">Paving in Lesotho</div></div>
 </div></div>
 
+<section id="work"><div class="w">
+  <div class="lbl">Our Work</div>
+  <h2 class="tit">Driveways, forecourts, car parks</h2>
+  <p class="dsc">Residential driveways with pattern work, retail forecourts and commercial parking — laid and finished by our own crews.</p>
+  <div class="gal">
+    <div class="gp wide"><picture><source srcset="assets/work-2.webp" type="image/webp"><img src="assets/work-2.jpg" alt="Paved driveway with pattern detail, Maseru" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
+    <div class="gp"><picture><source srcset="assets/work-11.webp" type="image/webp"><img src="assets/work-11.jpg" alt="Paved forecourt and parking bays at a Shoprite Express store" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
+    <div class="gp"><picture><source srcset="assets/work-3.webp" type="image/webp"><img src="assets/work-3.jpg" alt="Completed residential paving project" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
+    <div class="gp wide"><picture><source srcset="assets/work-12.webp" type="image/webp"><img src="assets/work-12.jpg" alt="Paved commercial car park with marked bays alongside a modern office building" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
+    <div class="gp"><picture><source srcset="assets/work-8.webp" type="image/webp"><img src="assets/work-8.jpg" alt="Charcoal paving with gold accent squares across a walled residential driveway" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
+    <div class="gp"><picture><source srcset="assets/work-4.webp" type="image/webp"><img src="assets/work-4.jpg" alt="Commercial paving installation" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
+    <div class="gp wide"><picture><source srcset="assets/work-9.webp" type="image/webp"><img src="assets/work-9.jpg" alt="Long residential driveway in alternating cream and charcoal pavers" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
+    <div class="gp"><picture><source srcset="assets/work-10.webp" type="image/webp"><img src="assets/work-10.jpg" alt="Curved entrance driveway with a decorative pebble-inlaid border" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
+    <div class="gp"><picture><source srcset="assets/work-5.webp" type="image/webp"><img src="assets/work-5.jpg" alt="Retail forecourt paving" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
+    <div class="gp wide"><picture><source srcset="assets/work-13.webp" type="image/webp"><img src="assets/work-13.jpg" alt="Commercial parking in charcoal pavers with the Maloti mountains behind" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
+    <div class="gp"><picture><source srcset="assets/work-6.webp" type="image/webp"><img src="assets/work-6.jpg" alt="Close detail of laid pavers" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
+    <div class="gp"><picture><source srcset="assets/work-7.webp" type="image/webp"><img src="assets/work-7.jpg" alt="Commercial car park paving" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
+    <div class="gp"><picture><source srcset="assets/work-1.webp" type="image/webp"><img src="assets/work-1.jpg" alt="Hexagonal paver driveway" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
+  </div>
+</div></section>
+
+<!-- ============ SERVICES ============ -->
 <!-- ============ CALCULATOR ============ -->
 <section id="calc" class="calc-sec"><div class="w">
   <div class="lbl" style="color:var(--ac2)">Instant Quote</div>
@@ -350,28 +410,6 @@ footer .r{margin-top:8px;font-size:11.5px;color:#8d8178}
 </div></section>
 
 <!-- ============ WORK ============ -->
-<section id="work"><div class="w">
-  <div class="lbl">Our Work</div>
-  <h2 class="tit">Driveways, forecourts, car parks</h2>
-  <p class="dsc">Residential driveways with pattern work, retail forecourts and commercial parking — laid and finished by our own crews.</p>
-  <div class="gal">
-    <div class="gp wide"><picture><source srcset="assets/work-2.webp" type="image/webp"><img src="assets/work-2.jpg" alt="Paved driveway with pattern detail, Maseru" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
-    <div class="gp"><picture><source srcset="assets/work-11.webp" type="image/webp"><img src="assets/work-11.jpg" alt="Paved forecourt and parking bays at a Shoprite Express store" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
-    <div class="gp"><picture><source srcset="assets/work-3.webp" type="image/webp"><img src="assets/work-3.jpg" alt="Completed residential paving project" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
-    <div class="gp wide"><picture><source srcset="assets/work-12.webp" type="image/webp"><img src="assets/work-12.jpg" alt="Paved commercial car park with marked bays alongside a modern office building" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
-    <div class="gp"><picture><source srcset="assets/work-8.webp" type="image/webp"><img src="assets/work-8.jpg" alt="Charcoal paving with gold accent squares across a walled residential driveway" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
-    <div class="gp"><picture><source srcset="assets/work-4.webp" type="image/webp"><img src="assets/work-4.jpg" alt="Commercial paving installation" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
-    <div class="gp wide"><picture><source srcset="assets/work-9.webp" type="image/webp"><img src="assets/work-9.jpg" alt="Long residential driveway in alternating cream and charcoal pavers" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
-    <div class="gp"><picture><source srcset="assets/work-10.webp" type="image/webp"><img src="assets/work-10.jpg" alt="Curved entrance driveway with a decorative pebble-inlaid border" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
-    <div class="gp"><picture><source srcset="assets/work-5.webp" type="image/webp"><img src="assets/work-5.jpg" alt="Retail forecourt paving" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
-    <div class="gp wide"><picture><source srcset="assets/work-13.webp" type="image/webp"><img src="assets/work-13.jpg" alt="Commercial parking in charcoal pavers with the Maloti mountains behind" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
-    <div class="gp"><picture><source srcset="assets/work-6.webp" type="image/webp"><img src="assets/work-6.jpg" alt="Close detail of laid pavers" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
-    <div class="gp"><picture><source srcset="assets/work-7.webp" type="image/webp"><img src="assets/work-7.jpg" alt="Commercial car park paving" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
-    <div class="gp"><picture><source srcset="assets/work-1.webp" type="image/webp"><img src="assets/work-1.jpg" alt="Hexagonal paver driveway" width="1200" height="800" loading="lazy" decoding="async"></picture></div>
-  </div>
-</div></section>
-
-<!-- ============ SERVICES ============ -->
 <section id="services" style="background:var(--sand2)"><div class="w">
   <div class="lbl">What We Do</div>
   <h2 class="tit">We make them and we lay them</h2>
@@ -484,5 +522,13 @@ calc();
   }
 })();
 </script>
+
+<!-- Phones only. A paving customer decides on three things: does the work look good, what does
+     it cost, and can I reach you. The first two are now the first two sections. This is the
+     third, and it does not scroll away. -->
+<div class="callbar" aria-label="Contact TM Stone">
+  <a href="tel:+26650659716" class="cb cb1">Call</a>
+  <a href="https://wa.me/26650659716" class="cb cb2" rel="noopener">WhatsApp</a>
+</div>
 </body>
 </html>
