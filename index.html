@@ -187,7 +187,7 @@ footer a{color:var(--ac2);text-decoration:none;font-weight:600}
 footer .r{margin-top:8px;font-size:11.5px;color:#8d8178}
 
 @media(max-width:900px){.calc{grid-template-columns:1fr}.specs-g{grid-template-columns:1fr 1fr}.svc,.gal{grid-template-columns:1fr 1fr}.gp.wide{grid-column:span 2}.cta{grid-template-columns:1fr}}
-@media(max-width:600px){.hero-in{padding-block:56px}.hero{min-height:76vh}.gp.wide{grid-column:span 1}nav ul{display:none;position:fixed;top:60px;left:0;right:0;background:var(--stone);flex-direction:column;padding:14px;align-items:stretch;text-align:center}nav ul.open{display:flex}.ham{display:flex}.svc,.gal{grid-template-columns:1fr}.row2{grid-template-columns:1fr}}
+@media(max-width:600px){.hero-in{padding-block:56px}.hero{min-height:76vh}.gp.wide{grid-column:span 1}nav ul{display:none}nav ul.open{display:flex}.ham{display:flex}.svc,.gal{grid-template-columns:1fr}.row2{grid-template-columns:1fr}}
 
 /* Motion, kept honest. CONTENT IS NEVER HIDDEN BY JAVASCRIPT.
    The reveal is a pure-CSS scroll-driven animation: browsers that support
@@ -258,6 +258,31 @@ footer .r{margin-top:8px;font-size:11.5px;color:#8d8178}
    the number deliberately. */
 footer a[href^="tel:"], footer a[href*="wa.me"]{
   display:inline-flex;align-items:center;min-height:44px
+}
+
+/* ---- The mobile menu, rebuilt. Two bugs in one rule, both visible on a real phone ----
+
+   1. It was pinned at a hardcoded `top:60px`. The header does not start at 60px: the preview
+      banner above it wraps to two lines on a 375px screen, so the header occupies 45 to 105px
+      and the panel opened inside it. Anchored to the header itself now, so it lands correctly
+      whatever the banner does.
+
+   2. The items had no gap and no height. "Get a Quote" overlapped "Instant Quote" by 11px, and
+      every item was about 20px tall: the primary navigation on a phone, at under half a thumb.
+
+   Missed because I never opened the menu. Jakote opened it on his phone in ten seconds. */
+@media(max-width:600px){
+  /* No position:relative here. nav is already position:sticky, which is a positioned
+     ancestor, so the panel anchors correctly. Setting relative would have silently
+     killed the sticky header on phones. */
+  nav ul{
+    position:absolute;top:100%;left:0;right:0;
+    background:var(--stone);flex-direction:column;align-items:stretch;
+    gap:6px;padding:10px 14px 18px;text-align:center;
+    box-shadow:0 18px 34px rgba(0,0,0,.42);
+  }
+  nav ul li{display:block}
+  nav ul a{display:flex;align-items:center;justify-content:center;min-height:48px;font-size:15px}
 }
 </style>
 <script type="application/ld+json">
