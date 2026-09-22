@@ -111,7 +111,11 @@ nav a.nl:hover{background:rgba(255,255,255,.08);color:#fff}
   .hero-bed figure{animation:none}
   .hero-bed figure:nth-child(1){opacity:1}
 }
-.hero-in{padding:90px 0}
+/* padding-block, not the padding shorthand. `padding:90px 0` set the horizontal
+   padding to zero and wiped out the gutter .hero-in inherits from .w, so at 375px
+   the headline, the body copy and both buttons sat flush against the screen edge.
+   Every other section on the page had 16px. This one had none, for that reason. */
+.hero-in{padding-block:90px}
 .kick{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.2em;background:var(--ac2);padding:6px 14px;border-radius:0;margin-bottom:20px}
 .hero h1{font-size:clamp(36px,6.5vw,68px);font-weight:700;line-height:.98;margin-bottom:16px;max-width:16ch}
 .hero p{font-size:clamp(15px,1.6vw,18px);color:#e6ddd4;max-width:54ch;line-height:1.7;margin-bottom:28px}
@@ -182,7 +186,7 @@ footer a{color:var(--ac2);text-decoration:none;font-weight:600}
 footer .r{margin-top:8px;font-size:11.5px;color:#8d8178}
 
 @media(max-width:900px){.calc{grid-template-columns:1fr}.specs-g{grid-template-columns:1fr 1fr}.svc,.gal{grid-template-columns:1fr 1fr}.gp.wide{grid-column:span 2}.cta{grid-template-columns:1fr}}
-@media(max-width:600px){.gp.wide{grid-column:span 1}nav ul{display:none;position:fixed;top:60px;left:0;right:0;background:var(--stone);flex-direction:column;padding:14px;align-items:stretch;text-align:center}nav ul.open{display:flex}.ham{display:block}.svc,.gal{grid-template-columns:1fr}.row2{grid-template-columns:1fr}}
+@media(max-width:600px){.hero-in{padding-block:56px}.hero{min-height:76vh}.gp.wide{grid-column:span 1}nav ul{display:none;position:fixed;top:60px;left:0;right:0;background:var(--stone);flex-direction:column;padding:14px;align-items:stretch;text-align:center}nav ul.open{display:flex}.ham{display:block}.svc,.gal{grid-template-columns:1fr}.row2{grid-template-columns:1fr}}
 
 /* Motion, kept honest. CONTENT IS NEVER HIDDEN BY JAVASCRIPT.
    The reveal is a pure-CSS scroll-driven animation: browsers that support
