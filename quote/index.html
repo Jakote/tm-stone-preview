@@ -163,6 +163,17 @@ body.hide-internal .internal{display:none!important}
   #ohRows .mat input,#mouldRows .mat input{width:118px;text-align:right}
   #ohRows .mat label,#mouldRows .mat label{display:none}
 }
+
+/* Phone. Two things that only show up on a real handset, found 22 September at 375px.
+   1. Every input and select was 14px. iOS Safari zooms the whole page when a field under
+      16px takes focus, so a customer filling an eight-step quote had the page jump and had
+      to pinch back out at every single field.
+   2. Tap targets were 37 to 39px against the 44px a thumb reliably hits. */
+@media(max-width:600px){
+  input,select,textarea{font-size:16px;min-height:44px}
+  .tabs{scroll-snap-type:x proximity}
+  .tab{scroll-snap-align:start;min-height:44px}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
