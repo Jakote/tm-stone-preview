@@ -55,7 +55,11 @@
   --r:0;                /* sharp. Every corner. The system is explicit about this. */
   --gutter:24px;
 }
-html{scroll-behavior:smooth}
+/* The header is sticky at 60px. Without scroll-padding-top, every in-page jump puts the
+   target section's top edge at y=0 and the header sits on the first 60px of it, which on a
+   phone is the section's 34px of padding plus 26px of its own heading. Six anchors do this:
+   both nav links, both hero buttons and both quote CTAs. 68px clears the header with room. */
+html{scroll-behavior:smooth;scroll-padding-top:68px}
 body{font-family:'Inter',system-ui,sans-serif;background:var(--sand);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 img{max-width:100%;display:block}
 .w{max-width:1140px;margin:0 auto;padding:0 clamp(16px,4vw,36px)}
@@ -563,5 +567,27 @@ calc();
   <a href="tel:+26650659716" class="cb cb1">Call</a>
   <a href="https://wa.me/26650659716" class="cb cb2" rel="noopener">WhatsApp</a>
 </div>
+<script>
+/* The menu opened but never closed. Tap "Our Work" and the page jumps to the gallery
+   with the black panel still sitting on top of the thing you asked to see. The opening
+   stays on the button's own inline onclick, so the menu still works if this never runs;
+   this block only handles the closing, which is the part that was missing. */
+(function(){
+  var nm = document.getElementById('nm'), ham = document.querySelector('.ham');
+  if (!nm || !ham) return;
+  ham.setAttribute('aria-label','Menu');
+  ham.setAttribute('aria-controls','nm');
+  ham.setAttribute('aria-expanded','false');
+  function shut(){ nm.classList.remove('open'); ham.setAttribute('aria-expanded','false'); }
+  // Runs after the inline handler, so the class is already toggled by this point.
+  ham.addEventListener('click', function(){
+    ham.setAttribute('aria-expanded', nm.classList.contains('open') ? 'true' : 'false');
+  });
+  nm.addEventListener('click', function(e){ if (e.target.closest('a')) shut(); });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && nm.classList.contains('open')) { shut(); ham.focus(); }
+  });
+})();
+</script>
 </body>
 </html>
