@@ -79,7 +79,8 @@ nav a.nl{color:#c9cfd5;text-decoration:none;font-size:13px;font-weight:500;paddi
 nav a.nl:hover{background:rgba(255,255,255,.08);color:#fff}
 .ncta{background:var(--ac2);color:#fff!important;font-family:'Montserrat',sans-serif;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:10px 18px;border-radius:0;text-decoration:none;font-size:12px}
 .ncta:hover{background:var(--ac2)}
-.ham{display:none;background:none;border:none;color:#fff;font-size:23px;cursor:pointer}
+.ham{display:none;background:none;border:0;color:#fff;font-size:22px;cursor:pointer;/* 44px minimum tap target. It was 29px: the only control that opens navigation on a
+   phone, and too small to hit reliably. Padding rather than height so the glyph stays put. */min-width:44px;min-height:44px;display:none;align-items:center;justify-content:center;padding:0}
 
 .hero{position:relative;min-height:84vh;display:grid;align-items:center;color:#fff;overflow:hidden;
  background:#1c1816}
@@ -186,7 +187,7 @@ footer a{color:var(--ac2);text-decoration:none;font-weight:600}
 footer .r{margin-top:8px;font-size:11.5px;color:#8d8178}
 
 @media(max-width:900px){.calc{grid-template-columns:1fr}.specs-g{grid-template-columns:1fr 1fr}.svc,.gal{grid-template-columns:1fr 1fr}.gp.wide{grid-column:span 2}.cta{grid-template-columns:1fr}}
-@media(max-width:600px){.hero-in{padding-block:56px}.hero{min-height:76vh}.gp.wide{grid-column:span 1}nav ul{display:none;position:fixed;top:60px;left:0;right:0;background:var(--stone);flex-direction:column;padding:14px;align-items:stretch;text-align:center}nav ul.open{display:flex}.ham{display:block}.svc,.gal{grid-template-columns:1fr}.row2{grid-template-columns:1fr}}
+@media(max-width:600px){.hero-in{padding-block:56px}.hero{min-height:76vh}.gp.wide{grid-column:span 1}nav ul{display:none;position:fixed;top:60px;left:0;right:0;background:var(--stone);flex-direction:column;padding:14px;align-items:stretch;text-align:center}nav ul.open{display:flex}.ham{display:flex}.svc,.gal{grid-template-columns:1fr}.row2{grid-template-columns:1fr}}
 
 /* Motion, kept honest. CONTENT IS NEVER HIDDEN BY JAVASCRIPT.
    The reveal is a pure-CSS scroll-driven animation: browsers that support
