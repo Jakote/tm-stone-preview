@@ -12,7 +12,12 @@
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
   };
 
-  const BASE_MATERIALS = { CEMENT: 130, SAND: 2800, STONE: 434.26, PIGMENT: 1600 };
+  /* PUBLIC BUILD — no supplier prices are shipped from a public repository.
+     In local mode getMaterials() returns whatever the owner entered on his own
+     device, and an empty object if he has entered nothing yet. In cloud mode
+     the prices come from the materials table behind row-level security, as
+     they always did. See the PUBLIC BUILD note at the top of quote/index.html. */
+  const BASE_MATERIALS = {};
 
   const API = {
     mode: useCloud ? 'cloud' : 'local',
