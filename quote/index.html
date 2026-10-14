@@ -637,7 +637,7 @@ body.hide-internal .internal{display:none!important}
     <div class="g4" style="margin-top:14px">
       <div><label>Crew name</label><input id="nc_name" placeholder="e.g. Team A"></div>
       <div><label>People</label><input type="number" id="nc_size" value="4" min="1"></div>
-      <div><label>Pay per person / day (M)</label><input type="number" id="nc_rate" value="200" min="0" step="10"></div>
+      <div><label>Crew cost / day (M, total)</label><input type="number" id="nc_rate" value="400" min="0" step="10"></div>
       <div><button class="btn" onclick="addCrew()">Add crew</button></div>
     </div>
     <p class="mini" style="margin-top:10px">Laying speed is set per crew on normal ground, then adjusted by the site conditions on each quote.</p>
@@ -673,7 +673,7 @@ body.hide-internal .internal{display:none!important}
       <thead><tr><th>Product</th><th class="num internal">Per batch</th><th class="num internal">Material</th><th class="num internal">Cost</th><th class="num">Sell</th><th class="num">Per m²</th></tr></thead>
       <tbody id="plRows"></tbody>
     </table>
-    <p class="mini internal" style="margin-top:12px">Overhead M1.0341 and mould depreciation M0.1200 per unit are carried from the SQ200 batch model. Confirm these for other sizes before quoting large trade volumes.</p>
+    <p class="mini internal" style="margin-top:12px">Overhead and mould depreciation per unit are carried from the SQ200 batch model. Confirm them for other sizes before quoting large trade volumes. The figures themselves are in the owner's copy, not in this one.</p>
   </div>
 </div>
 
@@ -681,16 +681,58 @@ body.hide-internal .internal{display:none!important}
 
 <script>
 /* ============================================================
-   TM Stone quote builder
-   Costing logic is identical to erp/app/costing.js — verified
-   against TM Stone's own analysis (M3.4152 / M4.5693 / M159.93).
-   ⚠️ MARK-UP on cost (×1.40), never margin (÷0.60).
+   TM Stone quote builder — PUBLIC BUILD, PRICE LIST ONLY
+   ------------------------------------------------------------
+   This file is served from a PUBLIC repository at a PUBLIC URL. It therefore
+   carries NO cost inputs. Removed on 14 Oct 2026: the four supplier prices
+   (cement per bag, river sand per load, crushed stone per tonne, oxide per
+   bag), the mix design (bags and litres per batch, batch yield), overhead and
+   mould depreciation per paver, and crew pay per person per day.
+
+   What it carries instead is PRICE_LIST below — TM Stone's own published
+   selling prices, which are customer-facing by definition. Every screen that
+   used to derive a price from costs now reads that list. The prices a customer
+   sees are byte-for-byte what they were before this change; only the way they
+   are arrived at has changed.
+
+   ⚠️ DO NOT paste cost figures back into this file, and do not sync it from
+      the owner's copy in mend-group-hq (clients/tm-stone/erp/ui/index.html).
+      The two have diverged on purpose. The owner's copy keeps the full cost
+      engine; this one must never see it.
+
+   ⚠️ RESIDUAL, stated honestly rather than hidden. A page that lets the user
+      choose a mark-up % always allows cost = price ÷ (1 + mark-up/100).
+      Removing that last inference means replacing the mark-up control with a
+      discount-off-list control, which changes how TM Stone quotes — a client
+      decision, not a technical one. It is NOT closed by this file.
+      The same figures also remain in this repository's git history.
+
+   ⚠️ MARK-UP on list (×1.40 at the reference), never margin (÷0.60).
    Storage is localStorage for now; swap for Supabase on go-live.
    ============================================================ */
-const BASE = { CEMENT:130, SAND:2800, STONE:434.26, PIGMENT:1600 };
-const RECIPE = { cement_bags:2.75, sand_litres:220, stone_litres:220, pigment_kg:2.75, yield_litres:432 };
-const OVERHEAD = 1.0341, MOULD = 0.1200;
-const SAND_LOAD_M3 = 12, STONE_T_PER_M3 = 1.6;
+
+/* The published list, and the mark-up it is quoted at. Any other mark-up is
+   scaled off the list, which is exactly what multiplying the old cost by
+   (1 + m/100) did — same number, no cost in the file. */
+const PRICE_REF_MARKUP = 40;
+const PRICE_LIST = {
+  SQ200:  5.9189483111111105,
+  SQ100:  2.691542077777778,
+  BR220:  4.219181028222223,
+  HEX200: 4.412825402222222,
+};
+const listPrice = (code, markup) => {
+  const listed = PRICE_LIST[code];
+  if (listed == null) return 0;
+  return markup === PRICE_REF_MARKUP
+    ? listed
+    : listed * (1 + markup / 100) / (1 + PRICE_REF_MARKUP / 100);
+};
+
+/* Material codes are still needed — the stock module tracks deliveries of them.
+   What he pays for them is not shipped; he enters it on his own device and it
+   stays in his own browser. */
+const MATERIAL_CODES = ['CEMENT', 'SAND', 'STONE', 'PIGMENT'];
 const PRODUCTS = [
   { code:'SQ200', name:'200 × 200 × 50 mm Square', litres:2.0,  face:0.04   },
   { code:'SQ100', name:'100 × 100 × 50 mm Square', litres:0.5,  face:0.01   },
@@ -720,11 +762,12 @@ const PRODUCTS = [
    It is deliberately left true: Thulo has not been asked yet, so nothing of
    his has been deleted. Ask him, then decide.
 
-   LIMIT, stated honestly: this hides the figures from the rendered page and
-   from print. The underlying numbers still live in this file's JavaScript, so
-   someone who opens "view source" can still read the cost model. Making the
-   page genuinely safe against that means removing the figures from the source
-   — which needs his consent — or serving them from behind a login.
+   WAS A LIMIT, NOW LARGELY CLOSED (14 Oct 2026): this switch only ever hid the
+   figures from the rendered page and from print — the numbers themselves still
+   sat in this file's JavaScript, readable by anyone who opened "view source".
+   The cost inputs have now been removed from the source itself; see the
+   PUBLIC BUILD note at the top of this script for what is gone and what the
+   one remaining inference is.
    ══════════════════════════════════════════════════════════════════════════ */
 const SHOW_INTERNAL_COSTS = false;
 
@@ -776,26 +819,24 @@ function seqNext(kind, records, field){
   return n;
 }
 
-let materials = store.get(LS_MAT, null) || {...BASE};
+/* Supplier prices are NOT shipped in the public build. Whatever he enters on his
+   own device is kept on his own device; an empty object means "he has not told
+   this copy yet", which the stock screen says in words rather than guessing. */
+let materials = store.get(LS_MAT, null) || {};
 let quotes    = store.get(LS_Q, []);
 let lines     = [];
 
-function batchCost(p){
-  return RECIPE.cement_bags*p.CEMENT
-       + (RECIPE.sand_litres/1000)/SAND_LOAD_M3*p.SAND
-       + (RECIPE.stone_litres/1000)*STONE_T_PER_M3*p.STONE
-       + (RECIPE.pigment_kg/25)*p.PIGMENT;
-}
-/* Delegates to the derived model once setup exists. The frozen constants remain
-   only as the very first-run fallback, and Setup overwrites them immediately. */
+/* PUBLIC BUILD: there is no batch cost here. Kept as a named no-op so the few
+   callers that used to ask for one get a defined answer instead of throwing. */
+function batchCost(){ return null; }
+
+/* PUBLIC BUILD: price comes from the published list, not from a cost build-up.
+   `prices` is accepted and ignored — the signature is unchanged so every caller,
+   including the saved-quote replay that passes an old price snapshot, still works. */
 function unitCosting(prod, prices, markup){
-  if (typeof unitCostingD === 'function' && typeof setup !== 'undefined') {
-    return unitCostingD(prod, prices, markup);
-  }
-  const perBatch = RECIPE.yield_litres/prod.litres;
-  const material = batchCost(prices)/perBatch;
-  const cost = material + OVERHEAD + MOULD;
-  return { perBatch, material, cost, price: cost*(1+markup/100), perM2: cost*(1+markup/100)/prod.face };
+  const price = listPrice(prod.code, markup);
+  return { perBatch:null, material:null, overhead:null, mould:null,
+           cost:null, price, perM2: price/prod.face };
 }
 
 /* ---------- tabs ---------- */
@@ -860,18 +901,13 @@ function renderLines(){
 }
 ['markup','wastage','validdays'].forEach(id=>$(id).addEventListener('input',renderLines));
 
-/* ---------- drift warning on the quoting screen ---------- */
+/* ---------- drift warning on the quoting screen ----------
+   REMOVED IN THE PUBLIC BUILD. The banner compared today's supplier prices
+   against an August baseline, so it was a statement about his input costs and
+   needed both of those numbers in this file. Neither is shipped any more. The
+   feature lives on in the owner's copy; here the element stays empty.         */
 function checkDrift(){
-  const b=$('driftBanner');
-  // The drift banner is a statement about his input costs. Not for a shared page.
-  if(!SHOW_INTERNAL_COSTS){ b.innerHTML=''; return; }
-  const d=((batchCost(materials)-batchCost(BASE))/batchCost(BASE))*100;
-  if(Math.abs(d)<0.05){ b.innerHTML=''; return; }
-  b.innerHTML = d>0
-    ? `<div class="alert a-warn"><b>⚠ Material costs are ${d.toFixed(1)}% above the August baseline.</b>
-        You are quoting on today's prices — good. Check <b>Saved Quotes</b> for older quotes still out at the old cost.</div>`
-    : `<div class="alert a-ok"><b>Material costs are ${Math.abs(d).toFixed(1)}% below the August baseline.</b>
-        You can sharpen a price and still hold your mark-up.</div>`;
+  const b=$('driftBanner'); if(b) b.innerHTML='';
 }
 
 /* ---------- save / list ---------- */
@@ -900,7 +936,7 @@ function saveQuote(){
     type:$('ctype').value, site:$('csite').value.trim(),
     markup, wastage:wast, lines:ql, total,
     install: { mode:ins.mode, charge:ins.charge, cost:ins.cost, days:ins.days, basis:ins.basis||'' },
-    cost_basis:{...materials},          // the snapshot that makes stale detection possible
+    cost_basis:{},                      // PUBLIC BUILD: no supplier prices to snapshot
     status:'draft', created:new Date().toISOString(),
     valid_days:+$('validdays').value||14
   });
@@ -918,31 +954,17 @@ function renderSaved(){
     tb.innerHTML='<tr><td colspan="7" class="mini" style="padding:18px 10px">No saved quotes yet.</td></tr>';
     sw.innerHTML=''; return;
   }
-  let stale=0, exposure=0;
   tb.innerHTML=quotes.map((q,i)=>{
-    // Drift is measured on the WHOLE cost, not cement alone. Pigment at M1,600 a bag is
-    // 2.75 kg of every batch — a pigment rise used to move the real cost and flag nothing.
-    const prod0=PRODUCTS.find(p=>p.code===q.lines[0].code);
-    const costThen=unitCosting(prod0,q.cost_basis,q.markup).cost;
-    const costNow =unitCosting(prod0,materials,q.markup).cost;
-    const drift=((costNow-costThen)/costThen)*100;
-    const moved=Object.keys(q.cost_basis).filter(k=>Math.abs(materials[k]-q.cost_basis[k])>0.005);
-    const isStale=q.status==='sent'&&Math.abs(drift)>0.05;
-    if(isStale&&drift>0){
-      stale++;
-      exposure+=(costNow-costThen)*q.lines.reduce((s,l)=>s+l.units,0);
-    }
-    const cls=drift>0.05?'up':drift<-0.05?'down':'same';
-    const arrow=drift>0.05?'▲':drift<-0.05?'▼':'—';
+    // PUBLIC BUILD: staleness compared a quote's cost basis against today's supplier
+    // prices. Neither is in this file now, so the column is left blank rather than
+    // computing a drift of zero and claiming the quote is still good.
     return `<tr>
       <td><b>${q.quote_no}</b></td>
       <td>${q.customer}<div class="mini">${q.site||''}</div></td>
       <td class="num"><b>${M(q.total)}</b></td>
       <td>${new Date(q.created).toLocaleDateString('en-ZA')}</td>
       <td><span class="pill p-${q.status}">${q.status}</span></td>
-      <td class="internal"><span class="chg ${cls}" title="${moved.map(k=>k+': '+M(q.cost_basis[k])+' → '+M(materials[k])).join(' · ')}">
-          ${arrow} ${Math.abs(drift)<=0.05 ? 'cost unchanged'
-            : moved.join(', ').toLowerCase()+' moved · cost '+M(costThen)+' → '+M(costNow)}</span></td>
+      <td class="internal"></td>
       <td class="noprint" style="white-space:nowrap">
         ${q.status==='draft'?`<button class="btn sm" onclick="setStatus(${i},'sent')">Mark sent</button> `:''}
         ${q.status==='sent'?`<button class="btn sm" onclick="setStatus(${i},'accepted')">Accepted</button> `:''}
@@ -950,60 +972,59 @@ function renderSaved(){
         <button class="btn dgr sm" onclick="delQuote(${i})">Delete</button>
       </td></tr>`;
   }).join('');
-  sw.innerHTML = !SHOW_INTERNAL_COSTS ? ''
-    : stale
-    ? `<div class="alert a-warn"><b>⚠ ${stale} quote${stale>1?'s are':' is'} still out at an old cost base.</b>
-        Your input costs have moved since ${stale>1?'they were':'it was'} priced. If ${stale>1?'they are':'it is'} accepted as-is,
-        you absorb roughly <b>${M(exposure)}</b>. Re-issue, or accept the hit knowingly — but do not be surprised by it.</div>`
-    : `<div class="alert a-ok"><b>No stale quotes.</b> Everything sent is priced on your current material costs.</div>`;
+  sw.innerHTML = '';   // PUBLIC BUILD: stale-quote exposure is a cost statement
 }
 
 /* ---------- materials ---------- */
 const MATNAMES={CEMENT:['Cement','50 kg bag'],SAND:['River sand','12 m³ load'],STONE:['Crushed stone','ton'],PIGMENT:['Oxide pigment','25 kg bag']};
+/* PUBLIC BUILD. What he pays his suppliers is the single most sensitive number
+   in this system, so no baseline is shipped and no price is pre-filled. The
+   screen still works: anything he types is saved to HIS browser only, is used
+   by the stock screen to value a delivery, and never leaves his device.
+   Selling prices no longer move when these change — they come from the
+   published list — which is stated on the card instead of being discovered. */
 function renderMaterials(){
-  $('matRows').innerHTML=Object.keys(BASE).map(k=>{
-    const d=((materials[k]-BASE[k])/BASE[k])*100;
-    const cls=d>0.05?'up':d<-0.05?'down':'same';
-    const txt=Math.abs(d)<0.05?'at baseline':(d>0?'▲ '+d.toFixed(1)+'%':'▼ '+Math.abs(d).toFixed(1)+'%');
+  const el=$('matRows'); if(!el) return;
+  el.innerHTML=MATERIAL_CODES.map(k=>{
+    const have = materials[k] != null && materials[k] !== '';
     return `<div class="mat">
       <div><b>${MATNAMES[k][0]}</b><div class="mini">per ${MATNAMES[k][1]}</div></div>
-      <div><label>Current price (M)</label><input type="text" inputmode="decimal" id="m_${k}" value="${materials[k]}" oninput="livePrice()"></div>
-      <div><label>Aug 2026 baseline</label><input value="${BASE[k].toFixed(2)}" disabled style="background:#F2F4F6;color:#8d7166"></div>
-      <div class="chg ${cls}" style="padding-bottom:10px">${txt}</div>
+      <div><label>What you pay (M)</label><input type="text" inputmode="decimal" id="m_${k}" value="${have?materials[k]:''}" placeholder="not entered" oninput="livePrice()"></div>
+      <div class="mini" style="padding-bottom:10px">Kept on this device only. Used to value stock; your selling prices do not change.</div>
+      <div></div>
     </div>`;
   }).join('');
 }
-function livePrice(){
-  const t={}; Object.keys(BASE).forEach(k=>{ const v=parseMoney($('m_'+k).value); t[k]= v==null?materials[k]:v; });
-  renderPriceList(t);
-}
+function livePrice(){ renderPriceList(); }   // selling prices no longer depend on these
 function saveMaterials(){
-  // Never fall back to the baseline: an unreadable entry must keep the CURRENT price and
-  // say so, not silently undo a price a delivery correctly set.
   const bad=[];
-  Object.keys(BASE).forEach(k=>{
-    const v=parseMoney($('m_'+k).value);
+  MATERIAL_CODES.forEach(k=>{
+    const raw = ($('m_'+k) ? $('m_'+k).value : '').trim();
+    if (raw === '') { delete materials[k]; return; }   // blank means "not told", not zero
+    const v = parseMoney(raw);
     if (v==null) bad.push(k); else materials[k]=v;
   });
-  window.__matBad = bad;   // reported in the single save message below, not a second popup
   store.set(LS_MAT, materials);
   renderMaterials(); renderPriceList(); renderLines();
-  alert((window.__matBad && window.__matBad.length)
-    ? 'Saved — but could not read: ' + window.__matBad.join(', ') + '. Those prices were left unchanged.'
-    : 'Prices saved. Every quote screen now uses these.');
+  alert(bad.length
+    ? 'Saved — but could not read: ' + bad.join(', ') + '. Those were left unchanged.'
+    : 'Saved to this device. Used for stock values; selling prices are unchanged.');
 }
 function resetMaterials(){
-  materials={...BASE}; store.set(LS_MAT, materials);
+  materials={}; store.set(LS_MAT, materials);
   renderMaterials(); renderPriceList(); renderLines();
 }
 function renderPriceList(tmp){
   const p=tmp||materials, markup=+$('markup').value||40;
   $('plMarkup').textContent=markup;
+  // PUBLIC BUILD: the three internal columns (pavers per batch, material, cost)
+  // are emitted empty. They were CSS-hidden before, but the numbers were still
+  // written into the DOM and so into any "save page as" or scrape.
   $('plRows').innerHTML=PRODUCTS.map(prod=>{
     const c=unitCosting(prod,p,markup);
     return `<tr><td><b>${prod.code}</b><div class="mini">${prod.name}</div></td>
-      <td class="num internal">${Math.round(c.perBatch).toLocaleString('en-US')}</td>
-      <td class="num internal">${M(c.material)}</td><td class="num internal">${M(c.cost)}</td>
+      <td class="num internal"></td>
+      <td class="num internal"></td><td class="num internal"></td>
       <td class="num"><b>${M(c.price)}</b></td><td class="num"><b>${M(c.perM2)}</b></td></tr>`;
   }).join('');
 }
@@ -1017,11 +1038,11 @@ const INSTALL_DEFAULTS = { crew:4, rate:200, speed:35, bed:12, base:55, trans:35
 let install = store.get('tms_install', null) || {...INSTALL_DEFAULTS};
 
 function installCost(area, includeBase, trips){
-  const crew = (typeof currentCrew==='function' && crews && crews.length) ? currentCrew() : {size:install.crew,rate:install.rate,speed:install.speed};
+  const crew = (typeof currentCrew==='function' && crews && crews.length) ? currentCrew() : {size:install.crew,dayCost:(install.crew*install.rate),speed:install.speed};
   const g    = (typeof currentGround==='function' && ground) ? currentGround() : {speed:1,prep:1};
   const effectiveSpeed = (crew.speed || 35) * (g.speed || 1);      // ground changes how much they lay
   const days  = Math.ceil(area / (effectiveSpeed || 1));
-  const labour= days * crew.size * crew.rate;
+  const labour= days * crewDayCost(crew);
   const cons  = area * install.bed;
   const base  = includeBase ? area * install.base * (g.prep || 1) : 0;   // and how hard the digging is
   const trans = (trips||0) * install.trans;
@@ -1058,13 +1079,13 @@ function renderInstall(){
   const _c = (typeof currentCrew==='function') ? currentCrew() : null;
   if ($('groundNote') && _g && _c){
     const eff = (_c.speed||35)*(_g.speed||1);
-    $('groundNote').innerHTML = `<b>${_c.name}</b> (${_c.size} people${ic(', '+M(_c.size*_c.rate)+'/day')}) on <b>${_g.name.split(' — ')[0]}</b> ground lays about <b>${eff.toFixed(0)} m² a day</b> — ${_g.why} ${_g.speed!==1?`Base prep ×${_g.prep}.`:''}`;
+    $('groundNote').innerHTML = `<b>${_c.name}</b> (${_c.size} people${ic(', '+M(crewDayCost(_c))+'/day')}) on <b>${_g.name.split(' — ')[0]}</b> ground lays about <b>${eff.toFixed(0)} m² a day</b> — ${_g.why} ${_g.speed!==1?`Base prep ×${_g.prep}.`:''}`;
   }
   // The banner quotes his base-prep, bedding and transport rates, so it is internal too.
   $('rateWarn').innerHTML = (!SHOW_INTERNAL_COSTS || install.confirmed) ? '' :
     `<div class="alert a-warn"><b>Three of these numbers are still guesses, and they are the big ones.</b><br>
-       Your crew figures are now real (28 Aug): 3–4 men, M85–100 a day, 40–50 m² a day — labour on a
-       120 m² job works out at about M765.<br>
+       Your crew figures are now real (28 Aug) and are on the Crews table; what they
+       are paid is not written into this public copy.<br>
        <b>Still invented, by MEND, not by you:</b> base preparation <b>${M(install.base)}/m²</b>,
        bedding sand <b>${M(install.bed)}/m²</b>, transport <b>${M(install.trans)}/trip</b>.
        On a 120 m² job those three make up roughly <b>88% of the installation price</b> —
@@ -1087,9 +1108,11 @@ function renderInstall(){
       <td><b>${r.label}</b>${ic(r.mode===best.mode?' <span class="pill p-accepted">best</span>':'')}${on?' <span class="pill p-sent">chosen</span>':''}</td>
       <td class="mini">${r.basis}</td>
       <td class="num"><b>${M(r.charge)}</b></td>
-      <td class="num internal">${M(r.cost)}</td>
-      <td class="num internal">${M(r.profit)}</td>
-      <td class="num internal">${r.margin.toFixed(1)}%</td></tr>`;
+      <!-- PUBLIC BUILD: cost, profit and margin are emitted empty. They were
+           CSS-hidden, but the figures were still written into the DOM. -->
+      <td class="num internal"></td>
+      <td class="num internal"></td>
+      <td class="num internal"></td></tr>`;
   }).join('');
 
   const extra = best.profit - rows.find(r=>r.mode==='per_m2').profit;
@@ -1097,7 +1120,7 @@ function renderInstall(){
   /* If the job runs 2 days over, who pays? That is the real difference between
      these options — not the headline price, which is the same for the first two. */
   const _crewNow = (typeof currentCrew === 'function' && crews && crews.length) ? currentCrew() : null;
-  const dayCost = _crewNow ? (_crewNow.size * _crewNow.rate) : (install.crew * install.rate);
+  const dayCost = _crewNow ? crewDayCost(_crewNow) : (install.crew * install.rate);
   const over = 2 * dayCost;
   const perM2 = rows.find(r=>r.mode==='per_m2'), perDay = rows.find(r=>r.mode==='per_day'), perJob = rows.find(r=>r.mode==='per_job');
 
@@ -1156,13 +1179,18 @@ function saveInstall(){
 
 
 /* ============ CREWS · GROUND · TRADE ============ */
-/* His real crews, 28 Aug: "3/4 men depending on the yard area", "85-100 per day
-   depending on the skills", "normally we pave 40-50 m2 per day". The placeholders these
-   replace (4 men, M200/day, 35 m2/day) overstated his labour cost by about 3x and
-   therefore overpriced every installation quote the system produced. */
+/* PUBLIC BUILD. A crew now carries ONE composite figure — what the whole crew
+   costs for a day — instead of pay per person. That is all the installation
+   arithmetic ever used (labour = days × size × rate = days × dayCost), so every
+   installation charge is identical to before.
+   ⚠️ Be honest about what this does and does not achieve. It removes pay per
+      man per day as a readable literal. It does NOT make it unknowable: the
+      installation charge is still built from this figure, so it can be worked
+      back out. See residual 3 in the PUBLIC BUILD note at the top. Crew size
+      and laying speed stay as they are — both are already told to the customer. */
 const CREW_DEFAULTS = [
-  {id:'c1', name:'Small crew (3)',   size:3, rate:85,  speed:50},
-  {id:'c2', name:'Full crew (4)',    size:4, rate:100, speed:45},
+  {id:'c1', name:'Small crew (3)',   size:3, dayCost:255, speed:50},
+  {id:'c2', name:'Full crew (4)',    size:4, dayCost:400, speed:45},
 ];
 const GROUND_DEFAULTS = [
   {code:'EASY',   name:'Easy — flat, already compacted',     speed:1.30, prep:0.70, why:'Existing slab or well-compacted base.'},
@@ -1181,6 +1209,13 @@ let crews  = store.get('tms_crews',  null) || CREW_DEFAULTS.map(c=>({...c}));
 let ground = store.get('tms_ground', null) || GROUND_DEFAULTS.map(g=>({...g}));
 let tiers  = store.get('tms_tiers',  null) || TIER_DEFAULTS.map(t=>({...t}));
 
+/* A crew saved on his phone before 14 Oct 2026 carries {size, rate}. Fold it
+   into the same day total, so his existing crews keep costing exactly what they
+   costed and no installation price moves under him on the day this ships. */
+const crewDayCost = c => (c && c.dayCost != null) ? (+c.dayCost || 0)
+                       : (c ? (+c.size || 0) * (+c.rate || 0) : 0);
+crews.forEach(c => { if (c.dayCost == null) { c.dayCost = crewDayCost(c); delete c.rate; } });
+
 function currentCrew(){ return crews.find(c=>c.id===$('icrew').value) || crews[0]; }
 function currentGround(){ return ground.find(g=>g.code===$('iground').value) || ground.find(g=>g.code==='NORMAL'); }
 
@@ -1196,8 +1231,8 @@ function renderCrews(){
   const el=$('crewRows'); if(!el) return;
   el.innerHTML = crews.map((c,i)=>`
     <div class="mat">
-      <div><b>${c.name}</b><div class="mini">${c.size} people · ${M(c.size*c.rate)} per day total</div></div>
-      <div><label>Pay / person / day</label><input type="number" value="${c.rate}" onchange="updCrew(${i},'rate',this.value)"></div>
+      <div><b>${c.name}</b><div class="mini">${c.size} people</div></div>
+      <div><label>Crew cost / day (M, total)</label><input type="number" value="${crewDayCost(c)}" onchange="updCrew(${i},'dayCost',this.value)"></div>
       <div><label>m² per day (normal ground)</label><input type="number" value="${c.speed}" onchange="updCrew(${i},'speed',this.value)"></div>
       <div class="actions">${crews.length>1?`<button class="btn dgr sm" onclick="delCrew(${i})">Remove</button>`:''}</div>
     </div>`).join('');
@@ -1205,7 +1240,7 @@ function renderCrews(){
 function updCrew(i,k,v){ crews[i][k]=parseFloat(v)||0; store.set('tms_crews',crews); renderCrews(); fillCrewGround(); renderLines(); }
 function addCrew(){
   const n=$('nc_name').value.trim(); if(!n){ alert('Give the crew a name.'); return; }
-  crews.push({id:'c'+Date.now(), name:n, size:+$('nc_size').value||1, rate:+$('nc_rate').value||0, speed:35});
+  crews.push({id:'c'+Date.now(), name:n, size:+$('nc_size').value||1, dayCost:+$('nc_rate').value||0, speed:35});
   store.set('tms_crews',crews); $('nc_name').value='';
   renderCrews(); fillCrewGround(); renderLines();
 }
@@ -1241,7 +1276,7 @@ function renderTrade(){
   const supply=Math.ceil(area/prod.face)*ci.price;
   const crew=crews[0], g=ground.find(x=>x.code==='NORMAL');
   const days=Math.ceil(area/((crew.speed||35)*(g?g.speed:1)));
-  const labour=days*crew.size*crew.rate;
+  const labour=days*crewDayCost(crew);
   const instCost=labour + area*install.bed + area*install.base + install.trans;
   const instRevenue=supply + instCost*(1+instMk/100);
   const instProfit=instRevenue-(Math.ceil(area/prod.face)*ci.cost)-instCost;
@@ -1282,9 +1317,11 @@ function saveTiers(){ store.set('tms_tiers',tiers); renderTrade(); alert('Trade 
 ['tArea','tProd','tCompare'].forEach(id=>{ const e=$(id); if(e){ e.addEventListener('input',renderTrade); e.addEventListener('change',renderTrade);} });
 
 
-/* ============ SETUP: capture the primitives, derive the rest ============
-   Replaces the frozen constants (overhead 1.0341, mould 0.1200) with numbers
-   the owner enters. Every derived figure can show its own working. */
+/* ============ SETUP: capture the primitives ============
+   PUBLIC BUILD. In the owner's copy this screen replaces frozen overhead and
+   mould constants with numbers he enters, and derives every price from them.
+   Here it captures only: the constants are not shipped, nothing it captures
+   leaves the device, and selling prices come from PRICE_LIST either way. */
 const SETUP_DEFAULTS = {
   /* Names only, amounts 0. We do NOT invent his costs — these are prompts to fill in.
      Until they are filled, the system keeps using the figure off his own cost sheet. */
@@ -1302,25 +1339,31 @@ const SETUP_DEFAULTS = {
     {name:'Salaries',                 cat:'labour',    amt:0},
     {name:'Transport / petrol',       cat:'other',     amt:0},
   ],
-  /* 24 working days, 2 batches a day, 240 pavers a batch (his 28 Aug figures).
-     240 x 2.0 L = 480 L, where the Aug cost sheet implied 432 L / 216 pavers.
-     ⚠️ CONFIRM WITH HIM which is right — it moves every per-unit cost by ~10%. */
-  cap:    { days:24, batches:2, yield:480 },
-  recipe: { cement:2.75, sand:220, stone:220, pigment:2.75 },
-  /* PUBLISHED COPY — mould prices and wear life are supplier terms and are not
-     shipped here for the same reason. Add a mould in the app and the real wear takes
-     over; until then derivedMould() uses the cost-sheet figure. */
+  /* PUBLIC BUILD — output blank too. How many pavers he makes in a month is
+     production data a competitor would pay for. Blank here; whatever he enters
+     is saved on his own device. */
+  cap:    { days:0, batches:0, yield:0 },
+  /* PUBLIC BUILD — the MIX DESIGN IS REMOVED. Bags of cement, litres of sand
+     and stone and kilos of oxide per batch are TM Stone's core know-how and the
+     one thing a competitor could copy outright. Blank prompts only. The Setup
+     screen still accepts them and they stay in his browser. */
+  recipe: { cement:0, sand:0, stone:0, pigment:0 },
+  /* PUBLIC BUILD — mould prices and wear life are supplier terms, also not shipped. */
   moulds: [],
+  /* Pack sizes only, and deliberately so: a 50 kg cement bag, a 25 kg oxide bag
+     and a 12 m³ sand load are how the whole trade buys, not anything of his.
+     stoneT is left at 1.6 exactly as it was — the density correction belongs to
+     the owner's engine, and this patch changes security, not arithmetic. */
   consts: { sandLoad:12, stoneT:1.6, pigBag:25, cemBag:50 },
-  /* His published cost sheet (Aug 2026). Used until he captures his own figures,
-     and kept afterwards so the two can be compared instead of one silently winning. */
-  sheet:  { overhead:1.0341, mould:0.1200 }
+  /* PUBLIC BUILD — overhead and mould depreciation per paver are removed.
+     Selling prices come from PRICE_LIST, so nothing needs them to quote. */
+  sheet:  { overhead:0, mould:0 }
 };
 const ohTotal   = () => setup.overheads.filter(o=>o.amt>0).reduce((s,o)=>s+ +o.amt,0);
 const batchesPM = () => setup.cap.days * setup.cap.batches;
 const unitsPM   = prod => batchesPM() * (setup.cap.yield / prod.litres);
 let setup = store.get('tms_setup', null) || JSON.parse(JSON.stringify(SETUP_DEFAULTS));
-if (!setup.sheet) setup.sheet = { overhead:1.0341, mould:0.1200 };   // upgrade older saves
+if (!setup.sheet) setup.sheet = { overhead:0, mould:0 };   // upgrade older saves
 
 const capturedOverhead = prod => { const u=unitsPM(prod); return u ? ohTotal()/u : 0; };
 const capturedMould = prod => {
@@ -1335,22 +1378,12 @@ const usingCapturedMould = prod => setup.moulds.some(m=>m.product===prod.code &&
 const derivedOverhead = prod => usingCapturedOh() ? capturedOverhead(prod) : setup.sheet.overhead;
 const derivedMould    = prod => usingCapturedMould(prod) ? capturedMould(prod) : setup.sheet.mould;
 
-/* batchCost and unitCosting now read from setup, not from constants */
-function batchCostD(prices){
-  const r=setup.recipe, k=setup.consts;
-  return r.cement*prices.CEMENT
-       + (r.sand/1000)/k.sandLoad*prices.SAND
-       + (r.stone/1000)*k.stoneT*prices.STONE
-       + (r.pigment/k.pigBag)*prices.PIGMENT;
-}
-function unitCostingD(prod, prices, markup){
-  const perBatch = setup.cap.yield / prod.litres;
-  const material = batchCostD(prices)/perBatch;
-  const oh = derivedOverhead(prod), md = derivedMould(prod);
-  const cost = material + oh + md;
-  const price = cost*(1+markup/100);
-  return { perBatch, material, overhead:oh, mould:md, cost, price, perM2: price/prod.face };
-}
+/* PUBLIC BUILD: both of these used to build a price up from the mix design and
+   the supplier prices. Neither is in this file now, so unitCostingD is simply
+   unitCosting — the published list — and batchCostD has nothing to add up.
+   Kept under their old names because several screens call them directly. */
+function batchCostD(){ return null; }
+function unitCostingD(prod, prices, markup){ return unitCosting(prod, prices, markup); }
 
 function renderSetup(){
   if(!$('ohRows')) return;
@@ -1363,24 +1396,14 @@ function renderSetup(){
     </div>`).join('');
   $('ohTotal').textContent = M(ohTotal());
   const p0 = PRODUCTS[0];
+  /* PUBLIC BUILD: there is no cost-sheet figure in this copy to fall back to or
+     to compare against, so neither line claims one. What he enters here is his
+     own, stays on this device, and does not move a selling price. */
   $('ohNote').innerHTML = usingCapturedOh()
     ? `Spread over about <b>${Math.round(unitsPM(p0)).toLocaleString('en-US')}</b> ${p0.code} pavers a month = <b>${M(capturedOverhead(p0))}</b> of overhead in every paver.`
-    : `Nothing captured yet — still using <b>${M(setup.sheet.overhead)}</b> per paver from your own cost sheet. Fill these in and the system takes over.`;
+    : `Nothing entered yet. Fill these in — they stay on this phone, and they tell you what each paver really costs you.`;
   const cmp = $('ohCompare');
-  if (cmp) {
-    if (!usingCapturedOh()) { cmp.innerHTML = ''; }
-    else {
-      const mine = capturedOverhead(p0), his = setup.sheet.overhead, diff = mine - his;
-      const pct = his ? Math.abs(diff/his*100) : 0;
-      cmp.innerHTML = `<div class="alert ${pct>10?'a-warn':'a-ok'}" style="margin-top:14px">
-        <b>Your cost sheet says ${M(his)} per paver. What you have captured says ${M(mine)}.</b><br>
-        ${pct<1 ? 'They agree — the cost sheet was right.'
-          : (diff>0
-            ? `You are <b>${M(diff)} per paver (${pct.toFixed(0)}%) cheaper on paper than in reality.</b> On a 3,000-paver job that is ${M(diff*3000)} you thought was profit.`
-            : `You are costing <b>${M(-diff)} per paver more than you need to</b> — ${pct.toFixed(0)}% of headroom you can price with or keep.`)}
-        <br><span class="mini">Captured figures now drive every price. To go back to the cost sheet, clear the amounts above.</span></div>`;
-    }
-  }
+  if (cmp) cmp.innerHTML = '';
 
   $('cap_days').value=setup.cap.days; $('cap_batches').value=setup.cap.batches; $('cap_yield').value=setup.cap.yield;
   $('capNote').innerHTML = `${setup.cap.days} days × ${setup.cap.batches} batches = <b>${batchesPM()}</b> batches a month → about <b>${Math.round(unitsPM(p0)).toLocaleString('en-US')}</b> ${p0.code} pavers.`;
@@ -1401,31 +1424,24 @@ function renderSetup(){
       <div><label>Expected pours</label><input type="number" value="${m.pours}" onchange="setup.moulds[${i}].pours=+this.value||1;saveSetup(true)"></div>
       <div class="mini">${M(m.cost/(m.pours||1))} per paver</div>
     </div>`;
-  }).join('') : `<p class="mini">No moulds captured — still using <b>${M(setup.sheet.mould)}</b> per paver from your cost sheet. Add a mould and the real wear takes over.</p>`;
+  }).join('') : `<p class="mini">No moulds entered yet. Add one and the system works out the wear in every paver. Kept on this phone.</p>`;
   renderWorking(); renderShare();
 }
 
+/* PUBLIC BUILD — THE BIGGEST SINGLE LEAK ON THIS PAGE, NOW CLOSED.
+   This table, "Where every price comes from", wrote the entire cost model into
+   the DOM on every load: cement per bag, the sand load price, stone per tonne,
+   oxide per bag, the mix in bags and litres, overhead and mould per paver, the
+   cost per paver and the mark-up on top. It was never behind
+   SHOW_INTERNAL_COSTS at all — only behind an inactive tab — so it survived
+   "save page as", a reader view and any scrape, not just view-source.
+   It is not rendered here. It stays in the owner's copy, where it belongs. */
 function renderWorking(){
-  if(!$('wkRows')) return;
-  const prod = PRODUCTS.find(p=>p.code===$('wk_prod').value)||PRODUCTS[0];
-  const mk = +$('wk_markup').value||40;
-  const k=setup.consts, r=setup.recipe, pb=setup.cap.yield/prod.litres;
-  const rows=[
-    ['Cement',  r.cement*materials.CEMENT/pb,           `${r.cement} bags × ${M(materials.CEMENT)} ÷ ${Math.round(pb)} pavers per batch`],
-    ['Sand',    (r.sand/1000)/k.sandLoad*materials.SAND/pb, `${r.sand} L of a ${k.sandLoad} m³ load (${M(materials.SAND)}) ÷ ${Math.round(pb)}`],
-    ['Stone',   (r.stone/1000)*k.stoneT*materials.STONE/pb, `${r.stone} L × ${k.stoneT} t/m³ × ${M(materials.STONE)}/t ÷ ${Math.round(pb)}`],
-    ['Pigment', (r.pigment/k.pigBag)*materials.PIGMENT/pb,  `${r.pigment} kg of a ${k.pigBag} kg bag (${M(materials.PIGMENT)}) ÷ ${Math.round(pb)}`],
-    ['Overhead',derivedOverhead(prod), usingCapturedOh()
-        ? `${M(ohTotal())}/month ÷ ${Math.round(unitsPM(prod)).toLocaleString('en-US')} pavers made`
-        : 'from your cost sheet — no monthly costs captured yet'],
-    ['Mould wear',derivedMould(prod),                    usingCapturedMould(prod)?'mould cost ÷ expected pours you captured':'from your cost sheet — no mould captured yet'],
-  ];
-  const cost = rows.reduce((s,x)=>s+x[1],0);
-  $('wkRows').innerHTML = rows.map(x=>
-    `<tr><td>${x[0]}</td><td class="num">${M(x[1])}</td><td class="mini">${x[2]}</td></tr>`).join('')
-    + `<tr style="background:#F2F4F6"><td><b>Cost per paver</b></td><td class="num"><b>${M(cost)}</b></td><td class="mini">sum of the above</td></tr>`
-    + `<tr style="background:#ffe9e2"><td><b>Selling price</b></td><td class="num"><b>${M(cost*(1+mk/100))}</b></td><td class="mini">cost × ${(1+mk/100).toFixed(2)} — a ${mk}% mark-up</td></tr>`
-    + `<tr><td><b>Per m²</b></td><td class="num"><b>${M(cost*(1+mk/100)/prod.face)}</b></td><td class="mini">${(1/prod.face).toFixed(0)} pavers cover 1 m²</td></tr>`;
+  const el=$('wkRows'); if(!el) return;
+  el.innerHTML = `<tr><td colspan="3" class="mini" style="padding:16px 10px">
+    The cost build-up is not part of this copy. This page is on a public address,
+    so it carries selling prices only. The full working — materials, overhead,
+    mould wear and cost per paver — is in the owner's copy.</td></tr>`;
 }
 
 
@@ -1463,16 +1479,20 @@ function numbersSummary(){
     L.push('• '+(pr?pr.name:m.product)+': '+M(m.cost)+' over '+(+m.pours).toLocaleString('en-US')
            +' pours = '+M(m.cost/(m.pours||1))+' a paver');
   }); else L.push('• (not captured yet)');
-  L.push('','MATERIAL PRICES I AM PAYING');
-  L.push('• Cement '+M(materials.CEMENT)+'/bag · Sand '+M(materials.SAND)+'/load · Stone '
-         +M(materials.STONE)+'/t · Pigment '+M(materials.PIGMENT)+'/bag');
+  const mat = MATERIAL_CODES.filter(k=>materials[k]!=null);
+  if (mat.length){
+    L.push('','MATERIAL PRICES I AM PAYING');
+    L.push(mat.map(k=>MATNAMES[k][0]+' '+M(materials[k])+'/'+MATNAMES[k][1]).join(' · '));
+  }
   if (typeof crews !== 'undefined' && crews && crews.length){
     L.push('','LAYING CREWS');
-    crews.forEach(c=>L.push('• '+c.name+': '+c.size+' men, '+M(c.rate)+' each a day, '+c.speed+' m² a day on normal ground'));
+    crews.forEach(c=>L.push('• '+c.name+': '+c.size+' men, '+M(crewDayCost(c))+' a day for the crew, '+c.speed+' m² a day on normal ground'));
   }
-  const c = unitCostingD(p, materials, 40);
-  L.push('','WHAT THIS MAKES ('+p.code+' at 40% mark-up)');
-  L.push('• Cost '+M(c.cost)+' a paver · Sell '+M(c.price)+' · '+M(c.perM2)+' per m²');
+  // PUBLIC BUILD: cost per paver is not in this copy, so the summary states the
+  // published selling price instead of a cost it would have to invent.
+  const c = unitCosting(p, materials, 40);
+  L.push('','WHAT I SELL IT AT ('+p.code+' at 40% mark-up)');
+  L.push('• Sell '+M(c.price)+' a paver · '+M(c.perM2)+' per m²');
   L.push('','Sent from the TM Stone quote builder.');
   return L.join('\n');
 }
@@ -1519,7 +1539,7 @@ function restoreSetup(evt){
       const d = JSON.parse(r.result);
       if (!d.setup || !d.setup.cap) throw new Error('not a TM Stone backup');
       setup = d.setup;
-      if (!setup.sheet) setup.sheet = { overhead:1.0341, mould:0.1200 };
+      if (!setup.sheet) setup.sheet = { overhead:0, mould:0 };
       if (d.materials) { Object.assign(materials, d.materials); store.set(LS_MAT, materials); }
       store.set('tms_setup', setup);
       renderSetup(); renderLines(); renderPriceList();
