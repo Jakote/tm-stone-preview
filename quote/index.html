@@ -301,6 +301,19 @@ body.hide-internal .internal{display:none!important}
       <tbody id="savedRows"></tbody>
     </table>
   </div>
+
+  <div class="card">
+    <h2>Move this to a new phone — or to the new address</h2>
+    <div class="sub">Everything on these pages is saved in this browser and nowhere else.
+      A backup file is the only way it travels: to another phone, or to this site's own
+      address once that goes live. Save one before you change either.</div>
+    <div style="margin-top:12px;display:flex;gap:9px;flex-wrap:wrap">
+      <button class="btn" onclick="backupAll()">Save a backup of everything</button>
+      <label class="btn ghost" style="cursor:pointer;margin:0">Load a backup
+        <input type="file" accept="application/json" style="display:none" onchange="restoreAll(event)">
+      </label>
+    </div>
+  </div>
 </div>
 
 
@@ -1517,6 +1530,45 @@ function restoreSetup(evt){
   r.readAsText(f);
 }
 
+
+/* ============ portability ============
+   localStorage belongs to one origin. The day this site moves to its own address
+   the store starts empty, and GitHub stops serving the old address at all, so
+   nothing can be read back from it. These two buttons are the only way the data
+   crosses, which is why they are NOT behind SHOW_INTERNAL_COSTS — the published
+   copy is the one that needs them. They move every tms_ key, not just setup. */
+function backupAll(){
+  const keys = {};
+  for (let i = 0; i < localStorage.length; i++){
+    const k = localStorage.key(i);
+    if (k && k.indexOf('tms_') === 0) keys[k] = localStorage.getItem(k);
+  }
+  if (!Object.keys(keys).length){ alert('Nothing saved on this phone yet, so there is nothing to back up.'); return; }
+  const blob = new Blob([JSON.stringify({ tms_backup:1, saved:new Date().toISOString(),
+                                          from:location.origin, keys }, null, 2)],
+                        {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'tm-stone-everything-' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+function restoreAll(evt){
+  const f = evt.target.files && evt.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const d = JSON.parse(r.result);
+      if (!d || d.tms_backup !== 1 || !d.keys) throw new Error('not a TM Stone backup');
+      Object.keys(d.keys).forEach(k => { if (k.indexOf('tms_') === 0) localStorage.setItem(k, d.keys[k]); });
+      alert('Restored ' + Object.keys(d.keys).length + ' saved items. The page will reload.');
+      location.reload();
+    } catch (e) { alert('That file could not be read as a TM Stone backup.'); }
+    evt.target.value = '';
+  };
+  r.readAsText(f);
+}
 
 /* ============ MODULE 2 — jobs and production ============
    Module 1 answers "what should I charge?". This answers the two questions that
