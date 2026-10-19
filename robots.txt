@@ -1,7 +1,5 @@
-# TM Stone Solutions
-# Closed while the site is a preview. The pages carry noindex,nofollow as well.
-# At go-live, replace the Disallow below with:  Allow: /   and   Disallow: /quote/
 User-agent: *
-Disallow: /
+Allow: /
+Disallow: /quote/
 
 Sitemap: https://tmstone.co.ls/sitemap.xml
