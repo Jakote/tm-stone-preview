@@ -91,8 +91,14 @@ nav a.nl:hover{background:rgba(255,255,255,.08);color:#fff}
 /* The hero is three of Thulo's own drone photographs, cross-fading with a slow push.
    This replaced a phone video on 21 Sept: the footage was 848x478 handheld in flat
    light, and these stills are sharper, lighter and better lit. Motion without the
-   quality cost. */
+   quality cost.
+   OPTION, staged 19 Oct and not merged unless Thulo chooses video: his own footage
+   plays on top of the stills. It is still the same 848x478 handheld clip, so the
+   21 Sept quality call stands until he picks it. The stills stay underneath as the
+   fallback for no-autoplay, for reduced motion, and while the file arrives. */
 .hero-bed{position:absolute;inset:0;z-index:0}
+.hero video.hero-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
+@media(prefers-reduced-motion:reduce){ .hero video.hero-vid{display:none} }
 
 .hero-bed figure{position:absolute;inset:0;margin:0;background-size:cover;background-position:center;
  opacity:0;animation:heroCycle 21s infinite;will-change:transform,opacity}
@@ -359,6 +365,18 @@ footer a[href^="tel:"], footer a[href*="wa.me"]{
 </div></nav>
 
 <header class="hero">
+  <!-- Thulo's footage: 10 s silent loop of the covered car park he paved, from 0:33 of
+       the clip he sent (no people in shot). H.264, faststart. Phones get the 480x270 cut.
+       preload="metadata", not "none": "none" plus autoplay leaves the hero on the poster.
+       Reduced motion: neither source matches, so no video is fetched, the element is
+       hidden by CSS and the first drone still shows, unmoving. -->
+  <video class="hero-vid" autoplay muted loop playsinline preload="metadata"
+         poster="assets/hero-video-poster.jpg" aria-hidden="true">
+    <source src="assets/hero-video-small.mp4" type="video/mp4"
+            media="(prefers-reduced-motion: no-preference) and (max-width: 768px)">
+    <source src="assets/hero-video.mp4" type="video/mp4"
+            media="(prefers-reduced-motion: no-preference)">
+  </video>
   <div class="hero-bed" aria-hidden="true"><figure></figure><figure></figure><figure></figure></div>
   <div class="hero-veil" aria-hidden="true"></div>
   <div class="w hero-in">
