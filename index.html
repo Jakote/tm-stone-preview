@@ -478,18 +478,18 @@ footer a[href^="tel:"], footer a[href*="wa.me"]{
   <div class="r">Private preview built by <a href="https://mendgroup.co.za">MEND GROUP (PTY) LTD</a> · contact details and enquiry form to be added on approval</div>
 </div></footer>
 
+<script src="assets/price-list.js"></script>
 <script>
 // ---- Published price list ----
-// Selling prices per paver at TM Stone's current rates, matching the M159.93/m2 he publishes
-// for the SQ200. The yard's cost model — batch recipe, supplier rates, overhead, mould wear —
-// is deliberately NOT in this page. It is his competitive position and it belongs in the
-// costing app behind a login, not in a public marketing site anyone can view-source.
-const PRICE = {            // M per paver, supply only
-  SQ200:  6.3971,
-  SQ100:  2.8111,
-  BR220:  4.5085,
-  HEX200: 4.7236
-};
+// There is no list in this file. Both public pages read assets/price-list.js, so
+// the price here and the price in /quote/ cannot drift apart again — they used to,
+// and a customer could read M159.93/m² here and M147.97/m² there in one sitting.
+// If that file ever fails to load, the calculator shows no price rather than a
+// wrong one. Do not paste a number back in: tests/price-parity.test.js will fail.
+// The yard's cost model — batch recipe, supplier rates, overhead, mould wear — is
+// deliberately NOT in this page, and is not in that file either.
+const PRICE = window.TMS_PRICE_LIST;   // M per paver, supply only
+const FACE  = window.TMS_FACE_M2;      // m² per paver
 
 const $ = id => document.getElementById(id);
 const M = n => 'M' + n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -500,7 +500,7 @@ function calc(){
   const code = opt.value;
 
   const sellPer = PRICE[code];
-  const face = { SQ200:0.04, SQ100:0.01, BR220:0.0242, HEX200:0.026 }[code];
+  const face = FACE[code];
   const units = Math.ceil(area / face);
   const total = units * sellPer;
 
