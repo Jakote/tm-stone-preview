@@ -155,6 +155,18 @@ check('every wa.me link on the page goes to his business number', () => {
   if (wrong.length) throw new Error(`wa.me links to other numbers: ${wrong.join(' ')}`);
 });
 
+check('every wa.me link on the page is marked data-wa-quote, footer included', () => {
+  const bare = [...HTML.matchAll(/<a\b[^>]*href="https:\/\/wa\.me\/[^"]*"[^>]*>([^<]*)<\/a>/g)]
+    .filter(m => !/\bdata-wa-quote\b/.test(m[0]));
+  if (bare.length) throw new Error(`not marked, so never carries the quote: ${bare.map(m => m[0]).join(' ')}`);
+});
+
+check('the footer has its own WhatsApp link, marked data-wa-quote', () => {
+  const foot = HTML.slice(HTML.indexOf('<footer'), HTML.indexOf('</footer>'));
+  if (!/<a\b[^>]*href="https:\/\/wa\.me\/[^"]*"[^>]*\bdata-wa-quote\b|<a\b[^>]*\bdata-wa-quote\b[^>]*href="https:\/\/wa\.me\//.test(foot))
+    throw new Error('no marked wa.me link inside <footer>');
+});
+
 console.log('\n2. a sample quote: 120 m², 200 × 200 Square (the page default)\n');
 
 {
@@ -200,6 +212,28 @@ console.log('\n3. a second quote: 37.5 m², Hexagon\n');
   check('the message carries the screen total', () => has(msg, shown, 'total'));
   check('the message follows a change of paver (no stale SQ200 label)', () => {
     if (msg.includes('200 × 200 × 50 mm Square')) throw new Error('old paver label still in message');
+  });
+}
+
+console.log('\n3b. a big job: 1500 m², 200 × 200 Square\n');
+
+/* HQ's Sales tab reads these messages with parseEnquiry(), whose area pattern
+   takes a comma as a decimal point. "Area: 1,500 m²" came through as 1.5 m²,
+   so every job of 1,000 m² or more landed 1,000 times too small. The area is
+   written without a thousands separator; the price keeps its separator because
+   parseEnquiry reads "M…" amounts correctly. */
+{
+  const page = loadPage();
+  setJob(page, 1500, 'SQ200');
+  let msg = '';
+  check('the button href is a wa.me link to his number', () => {
+    msg = msgOf(page.ids.waquote ? page.ids.waquote.href : '');
+  });
+  check('the area is written "Area: 1500 m²", with no thousands separator', () => {
+    has(msg, 'Area: 1500 m²', 'area');
+  });
+  check('the total in the message is still the total on the screen', () => {
+    has(msg, page.ids.total.firstChild.textContent, 'screen total in message');
   });
 }
 
