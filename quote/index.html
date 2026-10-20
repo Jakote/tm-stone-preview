@@ -178,6 +178,8 @@ body.hide-internal .internal{display:none!important}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="data.js"></script>
+<!-- The published price list, shared with the home page. One copy, one truth. -->
+<script src="../assets/price-list.js"></script>
 </head>
 <body>
 
@@ -243,33 +245,30 @@ body.hide-internal .internal{display:none!important}
 
   <div class="card noprint" id="installCard">
     <h2>Installation</h2>
-    <div class="sub" id="installSub">How you charge for laying it — compare all three before you commit</div>
+    <div class="sub" id="installSub">TM Stone's own rate card — M90/m² all-in, M80–150 by terrain, excavation charged on the side</div>
 
     <div id="rateWarn"></div>
 
     <div class="g4" style="margin-bottom:11px">
-      <div><label>Crew on this job</label><select id="icrew"></select></div>
-      <div><label>Ground conditions</label><select id="iground"></select></div>
-      <div><label>Transport trips</label><input type="number" id="itrips" value="1" min="0" step="1"></div>
-      <div><label>Base preparation</label>
-        <select id="ibase"><option value="1">Include (excavate + sub-base)</option><option value="0">Exclude — base is ready</option></select></div>
-    </div>
-    <p class="mini" id="groundNote" style="margin:-4px 0 14px"></p>
-
-    <div class="g4" style="margin-bottom:14px">
       <div><label>Charge installation</label>
         <select id="imode">
           <option value="none">Supply only — no installation</option>
-          <option value="per_m2">Per m²</option>
-          <option value="per_day">Per day</option>
-          <option value="per_job">Fixed price for the job</option>
+          <option value="per_m2">Lay it — the rate card</option>
         </select></div>
-      <div><label>Override charge (M)</label><input type="text" inputmode="decimal" id="ioverride" placeholder="leave blank to use calc" step="0.01"></div>
-      <div></div><div></div>
+      <div><label>Rate (M per m²)</label><input type="number" id="irate" value="90" min="0" step="5"></div>
+      <div><label>TLB hours (excavation, at cost)</label><input type="number" id="itlb" value="0" min="0" step="0.5"></div>
+      <div><label>Override whole charge (M)</label><input type="text" inputmode="decimal" id="ioverride" placeholder="leave blank to use the rate" step="0.01"></div>
     </div>
+    <div class="g4" style="margin-bottom:14px">
+      <div><label>Crew on this job</label><select id="icrew"></select></div>
+      <div><label>Ground conditions</label><select id="iground"></select></div>
+      <div><label>Transport trips (already in overhead)</label><input type="number" id="itrips" value="0" min="0" step="1"></div>
+      <div></div>
+    </div>
+    <p class="mini" id="groundNote" style="margin:-4px 0 14px"></p>
 
     <table id="iCompare">
-      <thead><tr><th>Option</th><th>Basis</th><th class="num">You charge</th><th class="num internal">It costs you</th><th class="num internal">Profit</th><th class="num internal">Margin</th></tr></thead>
+      <thead><tr><th>Terrain</th><th>Basis</th><th class="num">You charge</th><th class="num internal">Indicative cost</th><th class="num internal">Profit</th><th class="num internal">Margin</th></tr></thead>
       <tbody id="iRows"></tbody>
     </table>
     <p class="mini" id="iNote" style="margin-top:11px"></p>
@@ -630,17 +629,20 @@ body.hide-internal .internal{display:none!important}
   </div>
 
 
-  <div class="card internal">
+  <div class="card">
     <h2>Crews</h2>
-    <div class="sub">Your teams and what they cost. Add as many as you run.</div>
+    <div class="sub">Your teams and how fast they lay. Add as many as you run.</div>
     <div id="crewRows"></div>
     <div class="g4" style="margin-top:14px">
       <div><label>Crew name</label><input id="nc_name" placeholder="e.g. Team A"></div>
       <div><label>People</label><input type="number" id="nc_size" value="4" min="1"></div>
-      <div><label>Crew cost / day (M, total)</label><input type="number" id="nc_rate" value="400" min="0" step="10"></div>
+      <div><label>m² per day (normal ground)</label><input type="number" id="nc_speed" value="45" min="1" step="1"></div>
       <div><button class="btn" onclick="addCrew()">Add crew</button></div>
     </div>
-    <p class="mini" style="margin-top:10px">Laying speed is set per crew on normal ground, then adjusted by the site conditions on each quote.</p>
+    <p class="mini" style="margin-top:10px">PUBLIC BUILD: what a crew is paid is not held in this copy. Crew size and laying
+      speed are told to the customer anyway; the day rate is a cost, and installation here is priced off the
+      rate card, not off crew cost. Laying speed is set per crew on normal ground, then adjusted by the site
+      conditions on each quote.</p>
   </div>
 
   <div class="card">
@@ -650,19 +652,25 @@ body.hide-internal .internal{display:none!important}
     <button class="btn" style="margin-top:12px" onclick="saveGround()">Save ground factors</button>
   </div>
 
-  <div class="card internal">
-    <h2>Other installation costs</h2>
-    <div class="sub">Per m² unless stated</div>
+  <div class="card">
+    <h2>Installation rate card</h2>
+    <div class="sub">TM Stone's own rates, given 14 October 2026. Selling rates only — no cost is held in this copy.</div>
     <div class="g3">
-      <div><label>Bedding sand etc. (M per m²)</label><input type="text" inputmode="decimal" id="s_bed" step="0.5" min="0"></div>
-      <div><label>Base preparation (M per m², normal ground)</label><input type="text" inputmode="decimal" id="s_base" step="1" min="0"></div>
-      <div><label>Transport per trip (M)</label><input type="text" inputmode="decimal" id="s_trans" step="10" min="0"></div>
+      <div><label>Normal rate (M per m², all-in)</label><input type="text" inputmode="decimal" id="s_rate" step="5" min="0"></div>
+      <div><label>Easy terrain (M per m²)</label><input type="text" inputmode="decimal" id="s_min" step="5" min="0"></div>
+      <div><label>Hard terrain (M per m²)</label><input type="text" inputmode="decimal" id="s_max" step="5" min="0"></div>
     </div>
+    <div class="g3" style="margin-top:11px">
+      <div><label>TLB hire (M per hour, charged on)</label><input type="text" inputmode="decimal" id="s_tlb" step="50" min="0"></div>
+      <div><label>Trip to site (M)</label><input type="text" inputmode="decimal" id="s_trip" step="10" min="0"></div>
+      <div></div>
+    </div>
+    <p class="mini" style="margin-top:11px">The rate covers levelling, bedding sand, paving and finishes. Excavation is not in
+      it — TLB is charged by the hour at what it costs. Change any rate here and the banner above the
+      installation table will say the figures are no longer the rate card as given.</p>
     <div style="margin-top:14px;display:flex;gap:9px;align-items:center;flex-wrap:wrap">
-      <button class="btn" onclick="saveInstall()">Save</button>
-      <label style="display:flex;align-items:center;gap:7px;margin:0;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink2)">
-        <input type="checkbox" id="s_confirmed" style="width:auto"> These are my real figures
-      </label>
+      <button class="btn" onclick="saveInstall()">Save rate card</button>
+      <button class="btn ghost" onclick="resetInstall()">Back to the rate card</button>
     </div>
   </div>
 
@@ -689,6 +697,15 @@ body.hide-internal .internal{display:none!important}
    bag), the mix design (bags and litres per batch, batch yield), overhead and
    mould depreciation per paver, and crew pay per person per day.
 
+   SECOND PASS, later the same day (MEN-134 (c)): the whole INSTALLATION cost
+   model went with it — crew day cost, bedding sand per m², base preparation
+   per m², transport per trip, and the laying days the first three were
+   multiplied by. Installation is now priced from TM Stone's own rate card
+   (M90/m², M80–150 by terrain, TLB M800/hour, M150 a trip), which is a
+   selling price and customer-facing by definition. The laying rate no longer
+   moves with the paver mark-up control. See the INSTALLATION block below for
+   what that changed and why.
+
    What it carries instead is PRICE_LIST below — TM Stone's own published
    selling prices, which are customer-facing by definition. Every screen that
    used to derive a price from costs now reads that list. The prices a customer
@@ -713,14 +730,15 @@ body.hide-internal .internal{display:none!important}
 
 /* The published list, and the mark-up it is quoted at. Any other mark-up is
    scaled off the list, which is exactly what multiplying the old cost by
-   (1 + m/100) did — same number, no cost in the file. */
-const PRICE_REF_MARKUP = 40;
-const PRICE_LIST = {
-  SQ200:  5.9189483111111105,
-  SQ100:  2.691542077777778,
-  BR220:  4.219181028222223,
-  HEX200: 4.412825402222222,
-};
+   (1 + m/100) did — same number, no cost in the file.
+
+   ⚠️ THE LIST IS NOT IN THIS FILE. It is ../assets/price-list.js, loaded above,
+      and the home page reads the same file. This page used to carry its own
+      copy and the two drifted: M147.97/m² here against M159.93/m² on the home
+      page, for the same SQ200. Ruled 14 Oct 2026 — one list, his published one.
+      Do not paste numbers back in; tests/price-parity.test.js will fail. */
+const PRICE_REF_MARKUP = window.TMS_PRICE_REF_MARKUP;
+const PRICE_LIST = window.TMS_PRICE_LIST;
 const listPrice = (code, markup) => {
   const listed = PRICE_LIST[code];
   if (listed == null) return 0;
@@ -733,11 +751,15 @@ const listPrice = (code, markup) => {
    What he pays for them is not shipped; he enters it on his own device and it
    stays in his own browser. */
 const MATERIAL_CODES = ['CEMENT', 'SAND', 'STONE', 'PIGMENT'];
+/* Face area comes from the shared list too — price ÷ face is the per-m² figure a
+   customer compares between the two pages, so a face that drifted would make
+   them disagree just as surely as a price that drifted. litres is this page's
+   own (it sizes a batch, it is not a price) and stays here. */
 const PRODUCTS = [
-  { code:'SQ200', name:'200 × 200 × 50 mm Square', litres:2.0,  face:0.04   },
-  { code:'SQ100', name:'100 × 100 × 50 mm Square', litres:0.5,  face:0.01   },
-  { code:'BR220', name:'220 × 110 × 50 mm Brick',  litres:1.21, face:0.0242 },
-  { code:'HEX200',name:'Hexagon 200 × 50 mm',      litres:1.30, face:0.026  },
+  { code:'SQ200', name:'200 × 200 × 50 mm Square', litres:2.0,  face:window.TMS_FACE_M2.SQ200  },
+  { code:'SQ100', name:'100 × 100 × 50 mm Square', litres:0.5,  face:window.TMS_FACE_M2.SQ100  },
+  { code:'BR220', name:'220 × 110 × 50 mm Brick',  litres:1.21, face:window.TMS_FACE_M2.BR220  },
+  { code:'HEX200',name:'Hexagon 200 × 50 mm',      litres:1.30, face:window.TMS_FACE_M2.HEX200 },
 ];
 /* ══════════════════════════════════════════════════════════════════════════
    SHOW_INTERNAL_COSTS — the single switch that makes this page safe to share.
@@ -1030,68 +1052,103 @@ function renderPriceList(tmp){
 }
 
 
-/* ============ INSTALLATION ============
-   One cost model, three ways to charge from it.
-   per_job carries a premium because TM Stone takes the risk of the job running
-   long — and keeps the upside when the crew finishes early. */
-const INSTALL_DEFAULTS = { crew:4, rate:200, speed:35, bed:12, base:55, trans:350, confirmed:false };
-let install = store.get('tms_install', null) || {...INSTALL_DEFAULTS};
+/* ============ INSTALLATION — HIS RATE CARD, PRICE SIDE ONLY ============
+   REPLACED 14 Oct 2026 (MEN-134 (c)). What was here before was a COST model —
+   crew pay, bedding sand per m², base preparation per m², transport per trip —
+   marked up by whatever the paver mark-up control said. Every one of those four
+   figures was invented by MEND, not given by TM Stone, and the mark-up control
+   moved the laying rate with it: M96.33/m² at 28%, M110.89 at 40%, M114.90 at
+   55%. On a 120 m² job at 40% that quoted M13,307 against the M10,800 his own
+   rate card charges — 23.2% above his published rate, on a public page.
 
-function installCost(area, includeBase, trips){
-  const crew = (typeof currentCrew==='function' && crews && crews.length) ? currentCrew() : {size:install.crew,dayCost:(install.crew*install.rate),speed:install.speed};
-  const g    = (typeof currentGround==='function' && ground) ? currentGround() : {speed:1,prep:1};
-  const effectiveSpeed = (crew.speed || 35) * (g.speed || 1);      // ground changes how much they lay
-  const days  = Math.ceil(area / (effectiveSpeed || 1));
-  const labour= days * crewDayCost(crew);
-  const cons  = area * install.bed;
-  const base  = includeBase ? area * install.base * (g.prep || 1) : 0;   // and how hard the digging is
-  const trans = (trips||0) * install.trans;
-  return { days, labour, cons, base, trans, total: labour+cons+base+trans,
-           crewName: crew.name, groundName: g.name, effectiveSpeed };
+   What is here now is the price side of his rate card and nothing else:
+     M90/m² all-in, M80–150 with the terrain, TLB at M800/hour charged on,
+     M150 a trip.
+   The rate no longer moves with the paver mark-up. There is no cost input in
+   this file, so cost, profit and margin are not computable here and are not
+   claimed — they are null, and the three internal columns stay empty. The
+   owner's copy (mend-group-hq, clients/tm-stone/erp/ui/index.html) keeps the
+   indicative cost side; this copy must never see it.
+
+   Mirrored in erp/app/costing.js installationQuote() on the price side —
+   change both together. */
+const INSTALL_DEFAULTS = { rate:90, min:80, max:150, tlb:800, trip:150, confirmed:true };
+let install = store.get('tms_install', null) || {...INSTALL_DEFAULTS};
+/* Upgrade a save — or a restored backup — made before 14 Oct 2026. Those carry
+   {crew, rate:200, speed, bed, base, trans}: `rate` is present, so testing for a
+   missing `rate` is not enough. Any of the cost-side keys means the old model. */
+if (install.rate == null || install.min == null ||
+    install.crew != null || install.bed != null || install.base != null || install.trans != null) {
+  install = {...INSTALL_DEFAULTS};
+  store.set('tms_install', install);
 }
 
-function installOptions(area, markup, includeBase, trips){
-  const c = installCost(area, includeBase, trips);
-  const mk = 1 + markup/100;
-  const perM2Charge = c.total * mk;
-  const perDayCharge= c.total * mk;                 // same cost base, charged by the day
-  const perJobCharge= c.total * (1 + (markup+10)/100);
-  const row = (mode,label,basis,charge)=>({
-    mode, label, basis, charge, cost:c.total,
-    profit: charge-c.total,
-    margin: charge ? (charge-c.total)/charge*100 : 0
-  });
-  return { c, rows:[
-    row('per_m2','Per m²',  M(perM2Charge/(area||1))+' /m² × '+area.toFixed(1)+' m²', perM2Charge),
-    row('per_day','Per day', c.days+' day'+(c.days>1?'s':'')+' × '+M(perDayCharge/(c.days||1))+' /day', perDayCharge),
-    row('per_job','Fixed price', 'one price for the whole job (~'+c.days+' day'+(c.days>1?'s':'')+')', perJobCharge)
+/* What the customer pays. The only installation arithmetic in this copy. */
+function installPrice(area, rate, tlbHours, trips){
+  const laying = area * (rate || install.rate);
+  const tlb    = (tlbHours||0) * install.tlb;      // pass-through, at what he pays
+  const trans  = (trips||0) * install.trip;        // see the double-count note below
+  return { laying, tlb, trans, total: laying+tlb+trans,
+           bandLow: area*install.min, bandHigh: area*install.max };
+}
+
+/* Is the rate card in use still the one TM Stone gave on 14 Oct 2026?
+   This is what keeps the banner below honest: it goes quiet because the figures
+   are his, not because the page is hiding something. */
+function installIsRateCard(){
+  return ['rate','min','max','tlb','trip'].every(k => +install[k] === INSTALL_DEFAULTS[k]);
+}
+
+/* The terrain band, as rows. One row per rate he actually quotes between. */
+function installOptions(area, rate, tlbHours, trips){
+  const row = (key,label,r)=>{
+    const p = installPrice(area, r, tlbHours, trips);
+    return { mode:key, label, rate:r,
+             basis: M(r)+' /m² × '+area.toFixed(1)+' m²'+(p.tlb? ' + '+M(p.tlb)+' TLB':''),
+             charge: p.total,
+             /* PUBLIC BUILD: no cost input in this file, so these are unknown,
+                not zero. Printing 0 would read as "it costs him nothing". */
+             cost:null, profit:null, margin:null };
+  };
+  return { rows:[
+    row('easy',   'Easy terrain',    install.min),
+    row('normal', 'His normal rate', install.rate),
+    row('hard',   'Hard terrain',    install.max)
   ]};
 }
 
 function renderInstall(){
   const area = lines.reduce((s,l)=>s+l.area, 0);
-  const markup = +$('markup').value || 40;
-  const includeBase = $('ibase').value === '1';
   const trips = +$('itrips').value || 0;
+  const tlbHours = +$('itlb').value || 0;
   const mode = $('imode').value;
 
   const _g = (typeof currentGround==='function') ? currentGround() : null;
   const _c = (typeof currentCrew==='function') ? currentCrew() : null;
   if ($('groundNote') && _g && _c){
-    const eff = (_c.speed||35)*(_g.speed||1);
-    $('groundNote').innerHTML = `<b>${_c.name}</b> (${_c.size} people${ic(', '+M(crewDayCost(_c))+'/day')}) on <b>${_g.name.split(' — ')[0]}</b> ground lays about <b>${eff.toFixed(0)} m² a day</b> — ${_g.why} ${_g.speed!==1?`Base prep ×${_g.prep}.`:''}`;
+    const eff = (_c.speed||45)*(_g.speed||1);
+    $('groundNote').innerHTML = `<b>${_c.name}</b> (${_c.size} people) on <b>${_g.name.split(' — ')[0]}</b> ground lays about <b>${eff.toFixed(0)} m² a day</b> — ${_g.why}`;
   }
-  // The banner quotes his base-prep, bedding and transport rates, so it is internal too.
-  $('rateWarn').innerHTML = (!SHOW_INTERNAL_COSTS || install.confirmed) ? '' :
-    `<div class="alert a-warn"><b>Three of these numbers are still guesses, and they are the big ones.</b><br>
-       Your crew figures are now real (28 Aug) and are on the Crews table; what they
-       are paid is not written into this public copy.<br>
-       <b>Still invented, by MEND, not by you:</b> base preparation <b>${M(install.base)}/m²</b>,
-       bedding sand <b>${M(install.bed)}/m²</b>, transport <b>${M(install.trans)}/trip</b>.
-       On a 120 m² job those three make up roughly <b>88% of the installation price</b> —
-       so the quote is mostly built on figures you have never confirmed.<br>
-       <span class="mini">Tell Jakote what you actually pay for excavation and sub-base, for bedding
-       sand per m², and per trip to site. Until then do not send an installation price to a customer.</span></div>`;
+  /* The guard is KEPT and it still has a job. It no longer depends on
+     SHOW_INTERNAL_COSTS: every figure it prints is one TM Stone publishes, so
+     there is nothing here to hide from a customer. What it watches is whether
+     the rates in use are still his. Shipped, they are — the banner is quiet
+     because `confirmed` is true AND the five rates still match the card he
+     gave, not because the page is suppressing a warning. Edit a rate and it
+     speaks up, which is the only state in which an invented laying price can
+     now reach a customer from this page. */
+  const onCard = install.confirmed && installIsRateCard();
+  $('rateWarn').innerHTML = onCard ? '' :
+    `<div class="alert a-warn"><b>These are not TM Stone's rate card.</b><br>
+       The card he gave on 14 October 2026 is <b>M${INSTALL_DEFAULTS.rate}/m²</b> all-in for levelling,
+       bedding sand, paving and finishes, moving between <b>M${INSTALL_DEFAULTS.min}</b> and
+       <b>M${INSTALL_DEFAULTS.max}</b> with the terrain, with excavation charged separately at
+       <b>M${INSTALL_DEFAULTS.tlb}/hour</b> of TLB and <b>M${INSTALL_DEFAULTS.trip}</b> a trip.
+       This page is currently set to <b>${M(install.rate)}/m²</b> (${M(install.min)}–${M(install.max)}),
+       TLB <b>${M(install.tlb)}/hour</b>, trip <b>${M(install.trip)}</b>.<br>
+       <span class="mini">Press "Back to the rate card" on Prices &amp; Rates to restore his figures, or
+       leave these in if he has given you new ones. Do not send a laying price built on a rate he has
+       not given.</span></div>`;
 
   if (!area || mode === 'none'){
     $('iRows').innerHTML = '<tr><td colspan="6" class="mini" style="padding:16px 10px">'+
@@ -1100,97 +1157,113 @@ function renderInstall(){
     return;
   }
 
-  const { c, rows } = installOptions(area, markup, includeBase, trips);
-  const best = rows.reduce((a,b)=> b.profit > a.profit ? b : a);
+  const rate = +$('irate').value || install.rate;
+  const { rows } = installOptions(area, rate, tlbHours, trips);
   $('iRows').innerHTML = rows.map(r=>{
-    const on = r.mode === mode;
+    const on = Math.abs(r.rate - rate) < 0.001;
     return `<tr style="${on?'background:#ffe9e2':''}">
-      <td><b>${r.label}</b>${ic(r.mode===best.mode?' <span class="pill p-accepted">best</span>':'')}${on?' <span class="pill p-sent">chosen</span>':''}</td>
+      <td><b>${r.label}</b>${on?' <span class="pill p-sent">chosen</span>':''}</td>
       <td class="mini">${r.basis}</td>
       <td class="num"><b>${M(r.charge)}</b></td>
-      <!-- PUBLIC BUILD: cost, profit and margin are emitted empty. They were
-           CSS-hidden, but the figures were still written into the DOM. -->
+      <!-- PUBLIC BUILD: cost, profit and margin are emitted empty. There is no
+           cost input in this file to compute them from, and they were only ever
+           CSS-hidden before — the figures still reached the DOM. -->
       <td class="num internal"></td>
       <td class="num internal"></td>
       <td class="num internal"></td></tr>`;
   }).join('');
 
-  const extra = best.profit - rows.find(r=>r.mode==='per_m2').profit;
-
-  /* If the job runs 2 days over, who pays? That is the real difference between
-     these options — not the headline price, which is the same for the first two. */
-  const _crewNow = (typeof currentCrew === 'function' && crews && crews.length) ? currentCrew() : null;
-  const dayCost = _crewNow ? crewDayCost(_crewNow) : (install.crew * install.rate);
-  const over = 2 * dayCost;
-  const perM2 = rows.find(r=>r.mode==='per_m2'), perDay = rows.find(r=>r.mode==='per_day'), perJob = rows.find(r=>r.mode==='per_job');
-
-  $('iNote').innerHTML = !SHOW_INTERNAL_COSTS ? '' :
-    `Cost breakdown: ${c.days} day${c.days>1?'s':''} · labour ${M(c.labour)} · bedding ${M(c.cons)}`+
-    (c.base? ' · base prep '+M(c.base):'')+` · transport ${M(c.trans)}.`+
-    (best.mode!=='per_m2' && extra>1
-      ? ` <b>Fixed price earns ${M(extra)} more than per m² here</b> — you carry the risk of it running long and keep the gain if it doesn't.`
-      : '')+
-    `<br><br><b>Per m² and per day charge the same today — the difference is who pays if it runs long.</b>
-     Say the site is worse than it looked and it takes 2 extra days (${M(over)} of crew time):
-     <br>· <b>Per m²</b> — you absorb it. Profit falls to ${M(perM2.profit-over)}.
-     <br>· <b>Per day</b> — the customer pays for the extra days. Profit holds near ${M(perDay.profit)}.
-     <br>· <b>Fixed price</b> — you absorb it, but you started ${M(extra)} ahead. Profit ${M(perJob.profit-over)}.
-     <br><span style="color:var(--ink3)">Rule of thumb: known, open site → fixed price. Awkward or unknown ground → per day.</span>`;
+  /* What this note used to do: compare per-m², per-day and fixed price and say who
+     absorbs two extra days. That comparison only existed because this file believed
+     it knew his crew day rate. It does not, and it must not. He sells one rate, so
+     the useful note is what the rate includes and what it excludes. */
+  const p = installPrice(area, rate, tlbHours, trips);
+  $('iNote').innerHTML =
+    `Includes <b>levelling, bedding sand, paving and finishes</b> at <b>${M(rate)}/m²</b> over
+     ${area.toFixed(1)} m². Excludes excavation — TLB at <b>${M(install.tlb)}/hour</b>, charged on the
+     side at what it costs.`+
+    (p.tlb ? ` ${(tlbHours).toFixed(1)} hour${tlbHours===1?'':'s'} of TLB adds <b>${M(p.tlb)}</b>.` : '')+
+    `<br><br>On terrain the same ${area.toFixed(1)} m² runs <b>${M(p.bandLow)}</b> (easy) to
+     <b>${M(p.bandHigh)}</b> (hard) — the rate moves with the ground, and with nothing else.`+
+    (p.trans ? `<br><br><span class="mini">Trips: site fuel is already inside the monthly transport
+     overhead carried by every paver. Charging ${trips} trip${trips===1?'':'s'} here as well counts it
+     twice — add them only for out-of-town sites.</span>` : '');
 }
 
 function currentInstall(){
   const area = lines.reduce((s,l)=>s+l.area, 0);
   const mode = $('imode').value;
   if (!area || mode === 'none') return { mode:'none', charge:0, cost:0, days:0 };
-  const { c, rows } = installOptions(area, +$('markup').value||40, $('ibase').value==='1', +$('itrips').value||0);
-  const chosen = rows.find(r=>r.mode===mode);
+  const rate = +$('irate').value || install.rate;
+  const tlbHours = +$('itlb').value || 0;
+  const trips = +$('itrips').value || 0;
+  const p = installPrice(area, rate, tlbHours, trips);
   const override = parseFloat($('ioverride').value);
-  const charge = isNaN(override) ? chosen.charge : override;
-  return { mode, charge, cost:c.total, days:c.days, basis:chosen.basis };
+  const charge = isNaN(override) ? p.total : override;
+  /* install_mode stays 'per_m2' or 'per_job' so saved quotes and the Supabase
+     check constraint (migration 003) still accept them.
+     cost is 0 because this copy holds no cost input — it is not a claim that
+     laying is free, and no cost is printed anywhere from it. */
+  return { mode: isNaN(override) ? 'per_m2' : 'per_job',
+           charge, cost:0, days:0, rate, tlbHours, tlb:p.tlb,
+           basis: M(rate)+' /m² × '+area.toFixed(1)+' m²'+(p.tlb?' + '+M(p.tlb)+' TLB':'') };
 }
 
 function renderInstallSettings(){
-  // crew size, day rate and speed live on the CREWS table (Prices & Rates), not here —
-  // these three refs never existed and threw, killing every statement after this call.
-  $('s_bed').value=install.bed;   $('s_base').value=install.base; $('s_trans').value=install.trans;
-  $('s_confirmed').checked=!!install.confirmed;
+  // Crew size and laying speed live on the CREWS table (Prices & Rates), not here.
+  // The quote screen's rate box is filled from the saved card too: its HTML value is
+  // the shipped M90, so without this a saved or restored card of M120 would show on
+  // the rate-card screen while the quote screen went on charging M90.
+  if ($('irate')) $('irate').value = install.rate;
+  if (!$('s_rate')) return;
+  $('s_rate').value=install.rate; $('s_min').value=install.min; $('s_max').value=install.max;
+  $('s_tlb').value=install.tlb;   $('s_trip').value=install.trip;
 }
 function saveInstall(){
-  // crew/rate/speed are kept per crew on the CREWS table; only the rates on this card
-  // belong here. Reading three non-existent inputs threw and made saving impossible,
-  // so the "these are estimates" banner could never be cleared.
   install = {
     ...install,
-    bed:parseMoney($('s_bed').value)||0,
-    base:parseMoney($('s_base').value)||0,
-    trans:parseMoney($('s_trans').value)||0,
-    confirmed: $('s_confirmed').checked
+    rate:parseMoney($('s_rate').value)||0,
+    min:parseMoney($('s_min').value)||0,
+    max:parseMoney($('s_max').value)||0,
+    tlb:parseMoney($('s_tlb').value)||0,
+    trip:parseMoney($('s_trip').value)||0,
+    confirmed:true
   };
   store.set('tms_install', install);
-  renderInstall();
-  alert(install.confirmed ? 'Installation rates saved and confirmed.' : 'Saved — still marked as estimates.');
+  if ($('irate')) $('irate').value = install.rate;
+  renderInstallSettings(); renderLines();
+  alert(installIsRateCard()
+    ? 'Rate card saved — unchanged from the card given 14 October.'
+    : 'Rate card saved. These are no longer the rates given on 14 October, so the installation screen now says so.');
+}
+function resetInstall(){
+  install = {...INSTALL_DEFAULTS};
+  store.set('tms_install', install);
+  if ($('irate')) $('irate').value = install.rate;
+  renderInstallSettings(); renderLines();
+  alert('Back to the rate card given 14 October: M90/m², M80–150 by terrain, TLB M800/hour, M150 a trip.');
 }
 /* Changing any installation control must re-run the whole quote, not just the
    comparison table — the total includes installation. renderLines() calls
    renderInstall() at the end, so this is one pass, not a loop. */
-['imode','ibase','itrips','ioverride','icrew','iground'].forEach(id=>{
+['imode','irate','itlb','itrips','ioverride','icrew','iground'].forEach(id=>{
   const el=$(id); if(el){ el.addEventListener('input',renderLines); el.addEventListener('change',renderLines); }
 });
 
 
 /* ============ CREWS · GROUND · TRADE ============ */
-/* PUBLIC BUILD. A crew now carries ONE composite figure — what the whole crew
-   costs for a day — instead of pay per person. That is all the installation
-   arithmetic ever used (labour = days × size × rate = days × dayCost), so every
-   installation charge is identical to before.
-   ⚠️ Be honest about what this does and does not achieve. It removes pay per
-      man per day as a readable literal. It does NOT make it unknowable: the
-      installation charge is still built from this figure, so it can be worked
-      back out. See residual 3 in the PUBLIC BUILD note at the top. Crew size
-      and laying speed stay as they are — both are already told to the customer. */
+/* PUBLIC BUILD — crew pay is GONE from this file as of 14 Oct 2026 (MEN-134 (c)).
+   It used to carry a day cost per crew (M255 and M400). The earlier public build
+   folded pay-per-person into that one composite figure and said honestly that it
+   had not made the number unknowable, because the installation charge was still
+   built from it and could be worked back out. That residual is now closed at the
+   source: installation is priced off TM Stone's own rate card, the crew day cost
+   is not in this file at all, and nothing here derives a cost from it.
+   Crew size and laying speed stay — both are told to the customer anyway, and
+   the laying-speed estimate is the only thing this copy still uses a crew for. */
 const CREW_DEFAULTS = [
-  {id:'c1', name:'Small crew (3)',   size:3, dayCost:255, speed:50},
-  {id:'c2', name:'Full crew (4)',    size:4, dayCost:400, speed:45},
+  {id:'c1', name:'Small crew (3)',   size:3, speed:50},
+  {id:'c2', name:'Full crew (4)',    size:4, speed:45},
 ];
 const GROUND_DEFAULTS = [
   {code:'EASY',   name:'Easy — flat, already compacted',     speed:1.30, prep:0.70, why:'Existing slab or well-compacted base.'},
@@ -1209,12 +1282,12 @@ let crews  = store.get('tms_crews',  null) || CREW_DEFAULTS.map(c=>({...c}));
 let ground = store.get('tms_ground', null) || GROUND_DEFAULTS.map(g=>({...g}));
 let tiers  = store.get('tms_tiers',  null) || TIER_DEFAULTS.map(t=>({...t}));
 
-/* A crew saved on his phone before 14 Oct 2026 carries {size, rate}. Fold it
-   into the same day total, so his existing crews keep costing exactly what they
-   costed and no installation price moves under him on the day this ships. */
-const crewDayCost = c => (c && c.dayCost != null) ? (+c.dayCost || 0)
-                       : (c ? (+c.size || 0) * (+c.rate || 0) : 0);
-crews.forEach(c => { if (c.dayCost == null) { c.dayCost = crewDayCost(c); delete c.rate; } });
+/* A crew saved on his phone before this build carries a day cost (`dayCost`, or
+   `rate` per person before that). Drop it on load: nothing in this copy prices
+   from it any more, and leaving it would keep his labour cost in this device's
+   storage and in any backup file exported from this page. */
+crews.forEach(c => { delete c.dayCost; delete c.rate; });
+store.set('tms_crews', crews);
 
 function currentCrew(){ return crews.find(c=>c.id===$('icrew').value) || crews[0]; }
 function currentGround(){ return ground.find(g=>g.code===$('iground').value) || ground.find(g=>g.code==='NORMAL'); }
@@ -1232,7 +1305,7 @@ function renderCrews(){
   el.innerHTML = crews.map((c,i)=>`
     <div class="mat">
       <div><b>${c.name}</b><div class="mini">${c.size} people</div></div>
-      <div><label>Crew cost / day (M, total)</label><input type="number" value="${crewDayCost(c)}" onchange="updCrew(${i},'dayCost',this.value)"></div>
+      <div><label>People</label><input type="number" value="${c.size}" min="1" onchange="updCrew(${i},'size',this.value)"></div>
       <div><label>m² per day (normal ground)</label><input type="number" value="${c.speed}" onchange="updCrew(${i},'speed',this.value)"></div>
       <div class="actions">${crews.length>1?`<button class="btn dgr sm" onclick="delCrew(${i})">Remove</button>`:''}</div>
     </div>`).join('');
@@ -1240,7 +1313,7 @@ function renderCrews(){
 function updCrew(i,k,v){ crews[i][k]=parseFloat(v)||0; store.set('tms_crews',crews); renderCrews(); fillCrewGround(); renderLines(); }
 function addCrew(){
   const n=$('nc_name').value.trim(); if(!n){ alert('Give the crew a name.'); return; }
-  crews.push({id:'c'+Date.now(), name:n, size:+$('nc_size').value||1, dayCost:+$('nc_rate').value||0, speed:35});
+  crews.push({id:'c'+Date.now(), name:n, size:+$('nc_size').value||1, speed:+$('nc_speed').value||45});
   store.set('tms_crews',crews); $('nc_name').value='';
   renderCrews(); fillCrewGround(); renderLines();
 }
@@ -1270,16 +1343,17 @@ function renderTrade(){
   const units=Math.ceil(area/prod.face);
   const revenue=units*c.price, cost=units*c.cost;
 
-  // what the same area would earn installed, for an honest comparison
+  /* What the same area would earn installed. REBUILT 14 Oct 2026 (MEN-134 (c)):
+     the laying side is his own rate card, not MEND's invented cost marked up.
+     This copy holds no cost, so the comparison is revenue, not profit — and it
+     says so rather than quietly presenting revenue as if it were profit. */
   const instMk=+$('tCompare').value||40;
   const ci=unitCosting(prod, materials, instMk);
   const supply=Math.ceil(area/prod.face)*ci.price;
   const crew=crews[0], g=ground.find(x=>x.code==='NORMAL');
-  const days=Math.ceil(area/((crew.speed||35)*(g?g.speed:1)));
-  const labour=days*crewDayCost(crew);
-  const instCost=labour + area*install.bed + area*install.base + install.trans;
-  const instRevenue=supply + instCost*(1+instMk/100);
-  const instProfit=instRevenue-(Math.ceil(area/prod.face)*ci.cost)-instCost;
+  const days=Math.ceil(area/((crew.speed||45)*(g?g.speed:1)));
+  const lay=installPrice(area, install.rate, 0, 0);
+  const instRevenue=supply + lay.total;
 
   $('tierBox').innerHTML=`
     <div class="tot" style="margin-bottom:14px">
@@ -1289,13 +1363,13 @@ function renderTrade(){
         ${ic(`Cost to make <b>${M(cost)}</b> · Profit <b>${M(revenue-cost)}</b> at ${tier.markup}% mark-up<br>`)}
         Terms: ${tier.terms}</div></div>
     </div>
-    ${ic(`<div class="alert ${revenue-cost > instProfit ? 'a-ok':'a-warn'}">
-      <b>Same ${area} m², two ways.</b><br>
-      · <b>Trade supply:</b> profit ${M(revenue-cost)}. No crew, no site, no weather. Yard keeps running.<br>
-      · <b>You install it:</b> profit about ${M(instProfit)} — but it ties up a crew for ${days} day${days>1?'s':''} and you carry the site risk.<br>
-      ${revenue-cost > instProfit
-        ? 'At this volume the trade order earns more <i>and</i> costs you nothing but production. Take it.'
-        : 'Installing earns more here — but only if you have a free crew. If the crew is busy, the trade order is pure extra.'}
+    ${ic(`<div class="alert a-ok">
+      <b>Same ${area} m², two ways — revenue, not profit.</b><br>
+      · <b>Trade supply:</b> ${M(revenue)} at ${tier.markup}% off the list. No crew, no site, no weather.<br>
+      · <b>Supply and lay:</b> ${M(instRevenue)} — ${M(supply)} of pavers plus ${M(lay.total)} of laying at
+        ${M(install.rate)}/m², and it ties up a crew for about ${days} day${days>1?'s':''} with the site risk on you.<br>
+      <span class="mini">Which one earns more depends on what laying costs you, and that figure is
+      deliberately not in this copy. Your own copy has it.</span>
     </div>`)}`;
 
   $('tListRows').innerHTML = PRODUCTS.flatMap(pr =>
@@ -1486,8 +1560,12 @@ function numbersSummary(){
   }
   if (typeof crews !== 'undefined' && crews && crews.length){
     L.push('','LAYING CREWS');
-    crews.forEach(c=>L.push('• '+c.name+': '+c.size+' men, '+M(crewDayCost(c))+' a day for the crew, '+c.speed+' m² a day on normal ground'));
+    crews.forEach(c=>L.push('• '+c.name+': '+c.size+' men, '+c.speed+' m² a day on normal ground'));
   }
+  L.push('','LAYING RATE CARD');
+  L.push('• '+M(install.rate)+'/m² all-in ('+M(install.min)+'–'+M(install.max)+' with the terrain)'
+         +', TLB '+M(install.tlb)+'/hour and '+M(install.trip)+' a trip charged on'
+         +(installIsRateCard()?'':'  ⚠️ CHANGED from the card given 14 October'));
   // PUBLIC BUILD: cost per paver is not in this copy, so the summary states the
   // published selling price instead of a cost it would have to invent.
   const c = unitCosting(p, materials, 40);
@@ -2523,7 +2601,10 @@ function resetSetup(){ setup=JSON.parse(JSON.stringify(SETUP_DEFAULTS)); store.s
 ['wk_prod','wk_markup'].forEach(id=>{const e=$(id); if(e){e.addEventListener('input',renderWorking);e.addEventListener('change',renderWorking);}});
 
 fillCrewGround(); renderCrews(); renderGround(); renderSetup(); renderTrade(); renderJobsPage(); renderStockPage(); renderMoney();
-renderLines(); renderMaterials(); renderPriceList(); renderInstall(); renderInstallSettings();
+/* renderInstallSettings() first: it fills the quote screen's rate box from the saved
+   rate card, and renderInstall()/renderLines() read that box. Called the other way
+   round, the first render of a restored M120 card still charged the shipped M90. */
+renderInstallSettings(); renderLines(); renderMaterials(); renderPriceList(); renderInstall();
 
 /* The switch, applied. Everything marked .internal — static or generated — is
    hidden from the screen and from print in one place. */
